@@ -425,7 +425,7 @@ if YEAR == 2018: # just one option for weight file
 elif YEAR == 2017: # Weight file to be checked
     Y_MEAN = 1.055067777633667
     Y_STD  = 0.28225210309028625
-    WEIGHT_FILE = "breg_training_2017_jecV32.pb"
+    WEIGHT_FILE = "breg_training_2017_JECv32.pb"
 elif YEAR == 2016: # weight file marked as recommended
     Y_MEAN = 1.047176718711853
     Y_STD  = 0.31976690888404846
