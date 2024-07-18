@@ -135,7 +135,12 @@ EleFiller::EleFiller(const edm::ParameterSet& iConfig) :
     float PFPhotonIso       = l.photonIso();
 
     //float fSCeta = fabs(l.eta()); 
-    //float fSCeta = l.superCluster()->eta();
+    float fSCeta = l.superCluster()->eta();
+    float fSCphi = l.superCluster()->phi();
+    float fSCx = l.superCluster()->x();
+    float fSCy = l.superCluster()->y();
+    float fSCz = l.superCluster()->z();
+    float fSCenergy = l.superCluster()->energy();
 
     float combRelIsoPF = (l.pfIsolationVariables().sumChargedHadronPt + max(l.pfIsolationVariables().sumNeutralHadronEt +l.pfIsolationVariables().sumPhotonEt - 0.5 * l.pfIsolationVariables().sumPUPt, 0.0)) / l.pt();
 //LeptonIsoHelper::combRelIsoPF(sampleType, setup, rho, l);
@@ -220,7 +225,12 @@ EleFiller::EleFiller(const edm::ParameterSet& iConfig) :
     l.addUserFloat("deltaPhiSuperClusterTrackAtVtx",l.deltaPhiSuperClusterTrackAtVtx());
     l.addUserFloat("IoEmIoP",(1.0/l.ecalEnergy())-(1.0/l.p()));
     l.addUserFloat("IoEmIoP_ttH",IoEmIoP_ttH);
-    //l.addUserFloat("SCeta", fSCeta);
+    l.addUserFloat("SCeta", fSCeta);
+    l.addUserFloat("SCphi", fSCphi);
+    l.addUserFloat("SCx", fSCx);
+    l.addUserFloat("SCy", fSCy);
+    l.addUserFloat("SCz", fSCz);
+    l.addUserFloat("SCenergy", fSCenergy);
     l.addUserInt("isEB", int(l.isEB()));
     l.addUserFloat("ecalTrkEnergyPostCorr",ecalTrkEnergyPostCorr);
     l.addUserFloat("ecalTrkEnergyErrPostCorr",ecalTrkEnergyErrPostCorr);
