@@ -595,6 +595,11 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   std::vector<Float_t> _daughters_IoEmIoP;
   std::vector<Float_t> _daughters_IoEmIoP_ttH;
   std::vector<Float_t> _daughters_SCeta;
+  std::vector<Float_t> _daughters_SCphi;
+  std::vector<Float_t> _daughters_SCx;
+  std::vector<Float_t> _daughters_SCy;
+  std::vector<Float_t> _daughters_SCz;
+  std::vector<Float_t> _daughters_SCenergy;
   std::vector<Float_t> _daughters_tkRelIso;
   std::vector<Float_t> _daughters_depositR03_tracker;
   std::vector<Float_t> _daughters_depositR03_ecal;
@@ -977,6 +982,11 @@ void HTauTauNtuplizer::Initialize(){
   _daughters_IoEmIoP.clear();
   _daughters_IoEmIoP_ttH.clear();
   _daughters_SCeta.clear();
+  _daughters_SCphi.clear();
+  _daughters_SCx.clear();
+  _daughters_SCy.clear();
+  _daughters_SCz.clear();
+  _daughters_SCenergy.clear();
   _daughters_tkRelIso.clear(); 
   _daughters_depositR03_tracker.clear();  
   _daughters_depositR03_ecal.clear();  
@@ -1609,6 +1619,11 @@ void HTauTauNtuplizer::beginJob(){
   myTree->Branch("daughters_depositR03_hcal",&_daughters_depositR03_hcal);
   myTree->Branch("daughters_decayModeFindingOldDMs", &_daughters_decayModeFindingOldDMs);
   myTree->Branch("daughters_SCeta",&_daughters_SCeta);
+  myTree->Branch("daughters_SCphi",&_daughters_SCphi);
+  myTree->Branch("daughters_SCx",&_daughters_SCx);
+  myTree->Branch("daughters_SCy",&_daughters_SCy);
+  myTree->Branch("daughters_SCz",&_daughters_SCz);
+  myTree->Branch("daughters_SCenergy",&_daughters_SCenergy);
   myTree->Branch("daughters_decayModeFindingNewDMs", &_daughters_decayModeFindingNewDMs);
   myTree->Branch("daughters_byCombinedIsolationDeltaBetaCorrRaw3Hits", &_daughters_byCombinedIsolationDeltaBetaCorrRaw3Hits);
   //myTree->Branch("daughters_byIsolationMVArun2v1DBoldDMwLTraw",&_daughters_byIsolationMVArun2v1DBoldDMwLTraw);
@@ -2989,7 +3004,7 @@ void HTauTauNtuplizer::FillSoftLeptons(const edm::View<reco::Candidate> *daus,
     int decay=-1;
     int genmatch = -1;
 
-    float ieta=-1,full5x5_ieta=-1,hOverE=-1,etasuperatvtx=-1,phisuperatvtx=-1,IoEmIoP=-999.,IoEmIoP_ttH=-999.,tkRelIso=-1,depositTracker=-1,depositEcal=-1,depositHcal=-1, SCeta=-999.;
+    float ieta=-1,full5x5_ieta=-1,hOverE=-1,etasuperatvtx=-1,phisuperatvtx=-1,IoEmIoP=-999.,IoEmIoP_ttH=-999.,tkRelIso=-1,depositTracker=-1,depositEcal=-1,depositHcal=-1, SCeta=-999., SCphi=-999., SCx = -999, SCy = -999, SCz = -999, SCenergy=-999;
     int decayModeFindingOldDMs=-1, decayModeFindingNewDMs=-1; // tau 13 TeV ID
     float byCombinedIsolationDeltaBetaCorrRaw3Hits=-1., chargedIsoPtSum=-1., neutralIsoPtSum=-1., puCorrPtSum=-1.; // tau 13 TeV RAW iso info
     int numChargedParticlesSignalCone=-1, numNeutralHadronsSignalCone=-1, numPhotonsSignalCone=-1, numParticlesSignalCone=-1, numChargedParticlesIsoCone=-1, numNeutralHadronsIsoCone=-1, numPhotonsIsoCone=-1, numParticlesIsoCone=-1;
@@ -3056,6 +3071,11 @@ void HTauTauNtuplizer::FillSoftLeptons(const edm::View<reco::Candidate> *daus,
       IoEmIoP=userdatahelpers::getUserFloat(cand,"IoEmIoP");
       IoEmIoP_ttH=userdatahelpers::getUserFloat(cand,"IoEmIoP_ttH");
       SCeta = userdatahelpers::getUserFloat(cand,"SCeta");
+      SCphi = userdatahelpers::getUserFloat(cand,"SCphi");
+      SCx = userdatahelpers::getUserFloat(cand,"SCx");
+      SCy = userdatahelpers::getUserFloat(cand,"SCy");
+      SCz = userdatahelpers::getUserFloat(cand,"SCz");
+      SCenergy = userdatahelpers::getUserFloat(cand,"SCenergy");
       if(userdatahelpers::getUserFloat(cand,"isEleIDLoose") == 1) iseleLoose=true;
       if(userdatahelpers::getUserFloat(cand,"isEleID80") == 1) isele80=true;
       if(userdatahelpers::getUserFloat(cand,"isEleID90") == 1) isele90=true;
@@ -3179,6 +3199,11 @@ void HTauTauNtuplizer::FillSoftLeptons(const edm::View<reco::Candidate> *daus,
     _daughters_IoEmIoP.push_back(IoEmIoP);
     _daughters_IoEmIoP_ttH.push_back(IoEmIoP_ttH);
     _daughters_SCeta.push_back(SCeta);
+    _daughters_SCphi.push_back(SCphi);
+    _daughters_SCx.push_back(SCx);
+    _daughters_SCy.push_back(SCy);
+    _daughters_SCz.push_back(SCz);
+    _daughters_SCenergy.push_back(SCenergy);
     _daughters_tkRelIso.push_back(tkRelIso);
     _daughters_depositR03_tracker.push_back(depositTracker);
     _daughters_depositR03_ecal.push_back(depositEcal);
