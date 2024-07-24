@@ -8,16 +8,19 @@ import re
 ###################################################################
 #### Parameters to be changed for each production
 
-YEAR = "18"
-PERIOD = '' # 'APV' # can be left empty if running on 2017 and 2018
+YEAR = "16"
+assert YEAR in ("16", "17", "18")
 
-PREFIX = "Sig"
+PERIOD = '' # 'APV' # can be left empty if running on 2017 and 2018
+assert PERIOD in ("", "APV")
+
+PREFIX = "MC"
 assert PREFIX in ("Sig", "MC", "Data")
-TAG = "Feb2024"
+TAG = "April2024"
 
 datasetsFile = "datasets_UL" + YEAR + PERIOD + ".txt"
 nolocFile = "datasets_UL" + YEAR + ".noloc.txt"
-tag = PREFIX + "_UL" + YEAR + "_" + TAG
+tag = PREFIX + "_UL" + YEAR + PERIOD + "_" + TAG
 
 if YEAR == "16":
     lumiMaskFileName = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/Legacy_2016/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt'
@@ -32,33 +35,34 @@ elif YEAR == "18":
 isMC = True if PREFIX in ("Sig", "MC") else False 
 
 PROCESS = [
-    # "BACKGROUNDS_TT_20" + YEAR,
-    # "BACKGROUNDS_WJETS_20" + YEAR,
-    # "BACKGROUNDS_DY_NLO_20" + YEAR,
-    # "BACKGROUNDS_DY_NLO_PTSLICED_20" + YEAR,
-    # "BACKGROUNDS_DY_20" + YEAR,
-    # "BACKGROUNDS_VV_20" + YEAR,
-    # "BACKGROUNDS_VVV_20" + YEAR,
-    # "BACKGROUNDS_ST_20" + YEAR,
-    # "BACKGROUNDS_EWK_20" + YEAR,
-    # "BACKGROUNDS_H_20" + YEAR,
-    # "BACKGROUNDS_TTX_20" + YEAR,
-    # "BACKGROUNDS_TTVH_20" + YEAR,
-    # "BACKGROUNDS_DY_QQ_HTSLICED_20" + YEAR
-    # "BACKGROUNDS_DY_LM_20" + YEAR
+    "BACKGROUNDS_TT_20" + YEAR + PERIOD,
+    "BACKGROUNDS_WJETS_20" + YEAR + PERIOD,
+    "BACKGROUNDS_DY_NLO_20" + YEAR + PERIOD,
+    #"BACKGROUNDS_DY_NLO_PTSLICED_20" + YEAR + PERIOD,
+    "BACKGROUNDS_DY_20" + YEAR + PERIOD,
+    "BACKGROUNDS_VV_20" + YEAR + PERIOD,
+    "BACKGROUNDS_VVV_20" + YEAR + PERIOD,
+    "BACKGROUNDS_ST_20" + YEAR + PERIOD,
+    "BACKGROUNDS_EWK_20" + YEAR + PERIOD,
+    "BACKGROUNDS_H_20" + YEAR + PERIOD,
+    "BACKGROUNDS_TTX_20" + YEAR + PERIOD,
+    "BACKGROUNDS_TTVH_20" + YEAR + PERIOD,
+    #"BACKGROUNDS_DY_QQ_HTSLICED_20" + YEAR + PERIOD
+    "BACKGROUNDS_HH_20" + YEAR + PERIOD
+    # "BACKGROUNDS_DY_LM_20" + YEAR + PERIOD
 
-    "SIGNALS_GF_SPIN0_20" + YEAR,
-    "SIGNALS_GF_SPIN2_20" + YEAR,
-    # "SIGNALS_HY_20" + YEAR,
+    # "SIGNALS_GF_SPIN0_20" + YEAR + PERIOD,
+    # "SIGNALS_GF_SPIN2_20" + YEAR + PERIOD,
+    # "SIGNALS_HY_20" + YEAR + PERIOD,
 ]
 
 if not isMC:
     PROCESS = [
-        "DATA_TAU_20" + YEAR,
-        "DATA_ELE_20" + YEAR,
-        "DATA_MU_20" + YEAR,
-        "DATA_MET_20" + YEAR,
-        "DATA_DOUBLEMU_20" + YEAR
+        "DATA_TAU_20" + YEAR + PERIOD,
+        "DATA_ELE_20" + YEAR + PERIOD,
+        "DATA_MU_20" + YEAR + PERIOD,
+        "DATA_MET_20" + YEAR + PERIOD,
+        "DATA_DOUBLEMU_20" + YEAR + PERIOD
     ]
 
 FastJobs = False # controls number of jobs - true if skipping SVfit, false if computing it (jobs will be smaller)
@@ -82,9 +86,9 @@ if not os.path.isfile(datasetsFile):
 
 #check if directory exists
 crabJobsFolder = "crab3_" + tag
-if os.path.isdir(crabJobsFolder):
-    print "Folder %s already exists, please change tag name or delete it" % crabJobsFolder
-    sys.exit()
+# if os.path.isdir(crabJobsFolder):
+#     print "Folder %s already exists, please change tag name or delete it" % crabJobsFolder
+#     sys.exit()
 
 # grep all datasets names, skip lines with # as a comment
 # block between === * === are "sections" to be processed
@@ -129,16 +133,18 @@ print crabJobsFolder
 os.system ("mkdir %s" % crabJobsFolder)
 
 counter = 1 # appended to the request name to avoid overlaps between datasets with same name e.g. /DoubleEG/Run2015B-17Jul2015-v1/MINIAOD vs /DoubleEG/Run2015B-PromptReco-v1/MINIAOD
-outlog = open ((crabJobsFolder + "/submissionLog.txt"), "w")
-outlog.write (" =========  Starting submission on CRAB ========\n")
-outlog.write (" Parameters: \n")
-outlog.write (" PROCESS: \n")
-for pr in PROCESS: outlog.write ("   * %s\n" % pr)
-outlog.write (" tag: %s\n" % tag)
-outlog.write (" Fast jobs?: %s\n" % str(FastJobs))
-outlog.write (" Publish?: %s\n"   % str(PublishDataset))
-outlog.write (" ===============================================\n\n\n")
 
+outlog_name = os.path.join(crabJobsFolder, "submissionLog.txt")
+with open(outlog_name, "w") as outlog:
+    outlog.write(" =========  Starting submission on CRAB ========\n")
+    outlog.write(" Parameters: \n")
+    outlog.write(" PROCESS: \n")
+    for pr in PROCESS:
+        outlog.write("   * %s\n" % pr)
+    outlog.write(" tag: %s\n" % tag)
+    outlog.write(" Fast jobs?: %s\n" % str(FastJobs))
+    outlog.write(" Publish?: %s\n"   % str(PublishDataset))
+    outlog.write(" ===============================================\n\n\n")
 
 site_white_list = [
     "T1_DE_KIT", "T2_DE_DESY",
@@ -171,16 +177,16 @@ for dtset in dtsetToLaunch:
         toRemove = len (shortName) - 95
         shortName = shortName[toRemove:]
 
-    command = "crab submit -c crab3_template_LLR.py"
-    command += " General.requestName=%s" % (shortName + "_" + str(counter))
-    command += " General.workArea=%s" % crabJobsFolder
-    command += " Data.inputDataset=%s" % dtset
-    command += " Data.outLFNDirBase=/store/user/bfontana/HHNtuples_res/UL" + YEAR + "/%s/%s" % (tag, str(counter)+"_"+dtsetNames) # change to where you want to stage you ntuples
-    command += " Data.outputDatasetTag=%s" % (shortName + "_" + tag + "_" + str(counter))
-#    command += " Data.splitting='Automatic'"
-    command += " Data.splitting='FileBased'"
-    command += " Data.unitsPerJob=2"
-    command += " Data.totalUnits=-1"
+    command = ' '.join(("crab submit -c crab3_template_LLR.py",
+                        " General.requestName=%s" % (shortName + "_" + str(counter)),
+                        " General.workArea=%s" % crabJobsFolder,
+                        " Data.inputDataset=%s" % dtset,
+                        " Data.outLFNDirBase=/store/user/bfontana/HHNtuples_res/UL" + YEAR + "/%s/%s" % (tag, str(counter)+"_"+dtsetNames),
+                        " Data.outputDatasetTag=%s" % (shortName + "_" + tag + "_" + str(counter)),
+                        " Data.splitting='Automatic'",
+                        " Data.splitting='FileBased'",
+                        " Data.unitsPerJob=2",
+                        " Data.totalUnits=-1"))
     if ignoreLoc:
         command += " Data.ignoreLocality=True"
         #command += " Site.whitelist={}".format(site_white_list)
@@ -188,13 +194,24 @@ for dtset in dtsetToLaunch:
         cms_run_arg = lambda k, a: "{}=\"{}\"".format(k, fmt_list(a) if isinstance(a, list) else a)
         command += " " + " ".join(cms_run_arg(*tpl) for tpl in crab_whitelistarg.items())
 
-    if (EnrichedToNtuples): command += " Data.inputDBS=phys03" # if I published the dataset need to switch from global (default)
-    if (EnrichedToNtuples): command += " JobType.psetName=ntuplizer.py" # run a different python config for enriched
-    if not PublishDataset : command += " Data.publication=False" # cannot publish flat root ntuples
-    if (FastJobs)         : command += " Data.unitsPerJob=100000" # circa 50 ev / secondo --> circa 1/2 h ; else leave default of 4000 jobs
-    if VeryLong           : command += " JobType.maxJobRuntimeMin=2500" # 32 hours, default is 22 hours -- can do up to 2800 hrs
-    if not isMC           : command += " Data.lumiMask=%s" % lumiMaskFileName
-    print command ,  "\n"
-    os.system (command)
-    outlog.write(command + "\n\n")
+    if EnrichedToNtuples:
+        command += " Data.inputDBS=phys03" # if I published the dataset need to switch from global (default)
+        command += " JobType.psetName=ntuplizer.py" # run a different python config for enriched
+
+    if not PublishDataset:
+        command += " Data.publication=False" # cannot publish flat root ntuples
+
+    if FastJobs:
+        command += " Data.unitsPerJob=100000" # circa 50 ev / secondo --> circa 1/2 h ; else leave default of 4000 jobs
+    if VeryLong:
+        command += " JobType.maxJobRuntimeMin=2500" # 32 hours, default is 22 hours -- can do up to 2800 hrs
+    if not isMC:
+        command += " Data.lumiMask=%s" % lumiMaskFileName
+        
+    print command,  "\n"
+    os.system(command)
+
+    with open(outlog_name, "w") as outlog:
+        outlog.write(command + "\n\n")
+
     counter = counter + 1

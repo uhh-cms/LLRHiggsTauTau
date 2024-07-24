@@ -7,7 +7,7 @@ import os, re
 PyFilePath = os.environ['CMSSW_BASE']+"/src/LLRHiggsTauTau/NtupleProducer/"
 
 # Year/Period
-YEAR=2018
+YEAR=2016
 IsMC=True
 
 #apply corrections?
@@ -123,7 +123,6 @@ if not IsMC:
 ## Output file
 ##
 process.TFileService=cms.Service('TFileService',fileName=cms.string('HTauTauAnalysis.root'))
-#process.TFileService=cms.Service('TFileService',fileName=cms.string('refFiles/Mu16_sync.root'))
 
 if DO_ENRICHED:
     process.out = cms.OutputModule("PoolOutputModule",
