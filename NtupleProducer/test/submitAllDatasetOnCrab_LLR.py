@@ -8,61 +8,62 @@ import re
 ###################################################################
 #### Parameters to be changed for each production
 
-YEAR = "16"
-assert YEAR in ("16", "17", "18")
+YEAR = 2016
+assert YEAR in (2016, 2017, 2018)
 
-PERIOD = '' # 'APV' # can be left empty if running on 2017 and 2018
-assert PERIOD in ("", "APV")
+PERIOD = "" # 'postVFP' # can be left empty if running on 2017 and 2018
+assert PERIOD in ("", "postVFP")
 
 PREFIX = "MC"
 assert PREFIX in ("Sig", "MC", "Data")
 TAG = "April2024"
 
-datasetsFile = "datasets_UL" + YEAR + PERIOD + ".txt"
-nolocFile = "datasets_UL" + YEAR + ".noloc.txt"
-tag = PREFIX + "_UL" + YEAR + PERIOD + "_" + TAG
+period16 = "APV" if (PERIOD=="" and YEAR==2016) else ""
+datasetsFile = "datasets_UL" + str(YEAR[-2:]) + period16 + ".txt"
+nolocFile = "datasets_UL" + str(YEAR[-2:]) + ".noloc.txt"
+tag = PREFIX + "_UL" + str(YEAR[-2:]) + period16 + "_" + TAG
 
-if YEAR == "16":
+if YEAR == 2016:
     lumiMaskFileName = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/Legacy_2016/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt'
 
-elif YEAR == "17":
+elif YEAR == 2017:
     lumiMaskFileName = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/Legacy_2017/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt'
 
-elif YEAR == "18":
+elif YEAR == 2018:
     lumiMaskFileName = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/Legacy_2018/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt'
     
 # /!\ Be sure that the IsMC flag in analyzer_LLR.py matches this one!
 isMC = True if PREFIX in ("Sig", "MC") else False 
 
 PROCESS = [
-    "BACKGROUNDS_TT_20" + YEAR + PERIOD,
-    "BACKGROUNDS_WJETS_20" + YEAR + PERIOD,
-    "BACKGROUNDS_DY_NLO_20" + YEAR + PERIOD,
-    #"BACKGROUNDS_DY_NLO_PTSLICED_20" + YEAR + PERIOD,
-    "BACKGROUNDS_DY_20" + YEAR + PERIOD,
-    "BACKGROUNDS_VV_20" + YEAR + PERIOD,
-    "BACKGROUNDS_VVV_20" + YEAR + PERIOD,
-    "BACKGROUNDS_ST_20" + YEAR + PERIOD,
-    "BACKGROUNDS_EWK_20" + YEAR + PERIOD,
-    "BACKGROUNDS_H_20" + YEAR + PERIOD,
-    "BACKGROUNDS_TTX_20" + YEAR + PERIOD,
-    "BACKGROUNDS_TTVH_20" + YEAR + PERIOD,
-    #"BACKGROUNDS_DY_QQ_HTSLICED_20" + YEAR + PERIOD
-    "BACKGROUNDS_HH_20" + YEAR + PERIOD
-    # "BACKGROUNDS_DY_LM_20" + YEAR + PERIOD
+    "BACKGROUNDS_TT_" + str(YEAR) + period16,
+    "BACKGROUNDS_WJETS_" + str(YEAR) + period16,
+    "BACKGROUNDS_DY_NLO_" + str(YEAR) + period16,
+    #"BACKGROUNDS_DY_NLO_PTSLICED_" + str(YEAR) + period16,
+    "BACKGROUNDS_DY_" + str(YEAR) + period16,
+    "BACKGROUNDS_VV_" + str(YEAR) + period16,
+    "BACKGROUNDS_VVV_" + str(YEAR) + period16,
+    "BACKGROUNDS_ST_" + str(YEAR) + period16,
+    "BACKGROUNDS_EWK_" + str(YEAR) + period16,
+    "BACKGROUNDS_H_" + str(YEAR) + period16,
+    "BACKGROUNDS_TTX_" + str(YEAR) + period16,
+    "BACKGROUNDS_TTVH_" + str(YEAR) + period16,
+    #"BACKGROUNDS_DY_QQ_HTSLICED_" + str(YEAR) + period16
+    "BACKGROUNDS_HH_" + str(YEAR) + period16
+    # "BACKGROUNDS_DY_LM_" + str(YEAR) + period16
 
-    # "SIGNALS_GF_SPIN0_20" + YEAR + PERIOD,
-    # "SIGNALS_GF_SPIN2_20" + YEAR + PERIOD,
-    # "SIGNALS_HY_20" + YEAR + PERIOD,
+    # "SIGNALS_GF_SPIN0_" + str(YEAR) + period16,
+    # "SIGNALS_GF_SPIN2_" + str(YEAR) + period16,
+    # "SIGNALS_HY_" + str(YEAR) + period16,
 ]
 
 if not isMC:
     PROCESS = [
-        "DATA_TAU_20" + YEAR + PERIOD,
-        "DATA_ELE_20" + YEAR + PERIOD,
-        "DATA_MU_20" + YEAR + PERIOD,
-        "DATA_MET_20" + YEAR + PERIOD,
-        "DATA_DOUBLEMU_20" + YEAR + PERIOD
+        "DATA_TAU_" + str(YEAR) + period16,
+        "DATA_ELE_" + str(YEAR) + period16,
+        "DATA_MU_" + str(YEAR) + period16,
+        "DATA_MET_" + str(YEAR) + period16,
+        "DATA_DOUBLEMU_" + str(YEAR) + period16
     ]
 
 FastJobs = False # controls number of jobs - true if skipping SVfit, false if computing it (jobs will be smaller)
@@ -181,7 +182,7 @@ for dtset in dtsetToLaunch:
                         " General.requestName=%s" % (shortName + "_" + str(counter)),
                         " General.workArea=%s" % crabJobsFolder,
                         " Data.inputDataset=%s" % dtset,
-                        " Data.outLFNDirBase=/store/user/bfontana/HHNtuples_res/UL" + YEAR + "/%s/%s" % (tag, str(counter)+"_"+dtsetNames),
+                        " Data.outLFNDirBase=/store/user/bfontana/HHNtuples_res/UL" + str(YEAR) + period16 + "/%s/%s" % (tag, str(counter)+"_"+dtsetNames),
                         " Data.outputDatasetTag=%s" % (shortName + "_" + tag + "_" + str(counter)),
                         " Data.splitting='Automatic'",
                         " Data.splitting='FileBased'",
