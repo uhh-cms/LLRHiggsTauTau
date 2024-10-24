@@ -3,12 +3,16 @@
 #Producer controller
 #
 #-----------------------------------------
-import os, re
+import os, re, sys
 PyFilePath = os.environ['CMSSW_BASE']+"/src/LLRHiggsTauTau/NtupleProducer/"
 
 # Year/Period
-YEAR=2016
+YEAR=2018
 IsMC=True
+if sys.argv[1] == "uncertaintyScheme":
+    SCHEME = sys.argv[2]
+else:
+    SCHEME = "None"
 
 #apply corrections?
 APPLYMUCORR=False
@@ -122,7 +126,7 @@ if not IsMC:
 ##
 ## Output file
 ##
-process.TFileService=cms.Service('TFileService',fileName=cms.string('HTauTauAnalysis.root'))
+process.TFileService=cms.Service('TFileService', fileName=cms.string('HTauTauAnalysis.root'))
 
 if DO_ENRICHED:
     process.out = cms.OutputModule("PoolOutputModule",

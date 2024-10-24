@@ -8,7 +8,7 @@ import re
 ###################################################################
 #### Parameters to be changed for each production
 
-YEAR = 2016
+YEAR = 2018
 assert YEAR in (2016, 2017, 2018)
 
 PERIOD = "" # 'postVFP' # can be left empty if running on 2017 and 2018
@@ -16,12 +16,12 @@ assert PERIOD in ("", "postVFP")
 
 PREFIX = "MC"
 assert PREFIX in ("Sig", "MC", "Data")
-TAG = "April2024"
+TAG = "TestWeightSchemes"
 
 period16 = "APV" if (PERIOD=="" and YEAR==2016) else ""
-datasetsFile = "datasets_UL" + str(YEAR[-2:]) + period16 + ".txt"
-nolocFile = "datasets_UL" + str(YEAR[-2:]) + ".noloc.txt"
-tag = PREFIX + "_UL" + str(YEAR[-2:]) + period16 + "_" + TAG
+datasetsFile = "datasets_UL" + str(YEAR)[-2:] + period16 + ".txt"
+nolocFile = "datasets_UL" + str(YEAR)[-2:] + ".noloc.txt"
+tag = PREFIX + "_UL" + str(YEAR)[-2:] + period16 + "_" + TAG
 
 if YEAR == 2016:
     lumiMaskFileName = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/Legacy_2016/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt'
@@ -109,7 +109,7 @@ print " Publish?: "   , PublishDataset
 with open(datasetsFile) as fIn:
 
     for line in fIn:
-        line = line.strip() # remove newline at the end and leding/trailing whitespaces
+        line = line.strip() # remove newline at the end and leading/trailing whitespaces
         
         if not line: #skip empty lines
             continue
@@ -118,19 +118,19 @@ with open(datasetsFile) as fIn:
             continue
 
         words = line.split()
-
+        
         if len(words) >= 3:
             if words[0] == sectionBeginEnd and words[2] == sectionBeginEnd: 
                 currSection = words[1]
         else:
             if currSection in PROCESS:
-                dtsetToLaunch.append(line)
+                assert len(words)==2
+                dtsetToLaunch.append(words)
 
 # CREATE CRAB JOBS
 os.system ("voms-proxy-init -voms cms")
 
 for name in PROCESS: crabJobsFolder + "_" + name
-print crabJobsFolder
 os.system ("mkdir %s" % crabJobsFolder)
 
 counter = 1 # appended to the request name to avoid overlaps between datasets with same name e.g. /DoubleEG/Run2015B-17Jul2015-v1/MINIAOD vs /DoubleEG/Run2015B-PromptReco-v1/MINIAOD
@@ -156,7 +156,6 @@ site_white_list = [
 from collections import OrderedDict
 crab_whitelistarg = OrderedDict()
 crab_whitelistarg["Site.whitelist"] = site_white_list
-print dtsetToLaunch
 for dtset in dtsetToLaunch:
 
     ignoreLoc = False
@@ -165,24 +164,63 @@ for dtset in dtsetToLaunch:
 #            ignoreLoc = True
 #            print("ignoring locality for dset: {}".format(dtset))
 
-    dtsetNames = dtset
-    if '/MINIAODSIM' in dtset:
-        dtsetNames = dtset.replace('/MINIAODSIM', "")
-    elif '/MINIAOD' in dtset:
-        dtsetNames = dtset.replace('/MINIAOD', "")
-    dtsetNames = dtsetNames.replace('/', "__")
-    dtsetNames = dtsetNames.strip("__") # remove leading and trailing double __ 
-    shortName = dtset.split('/')[1]
-
+    dtsetName = dtset[0]
+    uncertScheme = dtset[1]
+    if '/MINIAODSIM' in dtsetName:
+        dtsetName = dtsetName.replace('/MINIAODSIM', "")
+    elif '/MINIAOD' in dtsetName:
+        dtsetName = dtsetName.replace('/MINIAOD', "")
+    dtsetName = dtsetName.replace('/', "__")
+    dtsetName = dtsetName.strip("__") # remove leading and trailing double __
+    shortName = dtsetName.split('__')[0]
+    
     if (len(shortName) > 95): # requestName not exceed 100 Characters!
         toRemove = len (shortName) - 95
         shortName = shortName[toRemove:]
 
-    command = ' '.join(("crab submit -c crab3_template_LLR.py",
+    static_defs_file = "crab3_template_LLR.py"
+    mes = '\n'.join(('# Template generated on-the-fly by submitAllDatasetOnCrab_LLR.py and used for automatic script submission of multiple datasets',
+                     '',
+                     'from WMCore.Configuration import Configuration',
+                     'config = Configuration()',
+                     '',
+                     'config.section_("General")',
+                     'config.General.requestName = "DefaultReqName"',
+                     'config.General.workArea = "DefaultCrab3Area"',
+                     '',
+                     'config.section_("JobType")',
+                     'config.JobType.pluginName = "Analysis"',
+                     'config.JobType.psetName = "analyzer_LLR.py" # to produce LLR ntuples or EnrichedMiniAOD according to the RunNtuplizer bool',
+                     'config.JobType.pyCfgParams=["uncertaintyScheme", "{}"]'.format(uncertScheme),
+                     '',
+                     'config.JobType.sendExternalFolder = True # Needed until the PR including the Spring16 ele MVA ID is integrated in CMSSW/cms-data.',
+                     'config.JobType.inputFiles=["JECUncertaintySources"] # FRA: adding to the sandobx the directory with JEC files (https://twiki.cern.ch/twiki/bin/view/CMSPublic/CRAB3FAQ#How_are_the_inputFiles_handled_i)',
+                     '',
+                     'config.section_("Data")',
+                     'config.Data.inputDataset = "/my/precious/dataset"',
+                     'config.Data.inputDBS = "global"',
+                     'config.Data.splitting = "Automatic"',
+                     '#config.Data.unitsPerJob = 28000 #number of events per jobs # 18K FOR SINGLE ELE, 10k for others, 28K for muons',
+                     'config.Data.totalUnits = -1 #number of event',
+                     'config.Data.publication = True',
+                     'config.Data.outputDatasetTag = "DefaultPublishName"',
+                     '',
+                     '#private 2K cores',
+                     '#config.section_("Debug")',
+                     '',
+                     'config.section_("Site")',
+                     'config.Site.storageSite = "T2_FR_GRIF_LLR" # PARIGI',
+                     '#config.Site.storageSite = "T3_IT_MIB" # MILANO',
+                     ))
+
+    with open(static_defs_file, 'w') as sdf:
+        sdf.write(mes)
+        
+    command = ' '.join(("crab submit -c {}".format(static_defs_file),
                         " General.requestName=%s" % (shortName + "_" + str(counter)),
                         " General.workArea=%s" % crabJobsFolder,
-                        " Data.inputDataset=%s" % dtset,
-                        " Data.outLFNDirBase=/store/user/bfontana/HHNtuples_res/UL" + str(YEAR) + period16 + "/%s/%s" % (tag, str(counter)+"_"+dtsetNames),
+                        " Data.inputDataset=%s" % dtset[0],
+                        " Data.outLFNDirBase=/store/user/bfontana/HHNtuples_res/UL" + str(YEAR) + period16 + "/%s/%s" % (tag, str(counter)+"_"+dtsetName),
                         " Data.outputDatasetTag=%s" % (shortName + "_" + tag + "_" + str(counter)),
                         " Data.splitting='Automatic'",
                         " Data.splitting='FileBased'",

@@ -16,9 +16,14 @@ except NameError:
 assert YEAR in (2016, 2017, 2018)
 try: PERIOD
 except:
-    PERIOD =""
+    PERIOD = ""
 print 'Year+Period:', str(YEAR)+PERIOD
 assert PERIOD in ("", "postVFP")
+try: SCHEME
+except:
+    SCHEME = "None"
+print 'Uncertainty scheme:', SCHEME
+assert SCHEME in ("None", "MadGraph45A", "MadGraph45B", "MadGraph9A", "MadGraph9B", "Powheg9")
 try: doCPVariables
 except NameError:
     doCPVariables=True       
@@ -246,8 +251,8 @@ if YEAR == 2018:
 
 from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
 setupEgammaPostRecoSeq(process,
-                       era=EgammaPostRecoSeq_ERA)    
-		       
+                       era=EgammaPostRecoSeq_ERA)
+
 process.softElectrons = cms.EDProducer("EleFiller",
    src    = cms.InputTag("slimmedElectrons"),
    rhoCollection = cms.InputTag("fixedGridRhoFastjetAll",""),
@@ -747,6 +752,7 @@ process.HTauTauTree = cms.EDAnalyzer("HTauTauNtuplizer",
                       IsMC = cms.bool(IsMC),
                       year = cms.int32(YEAR),
                       period = cms.string(PERIOD),
+                      uncertaintyScheme = cms.string(SCHEME), # which weight scheme to use for QCD scale, PDF and alpha_strong shape uncertainties
                       doCPVariables = cms.bool(doCPVariables),               
                       vtxCollection = cms.InputTag("offlineSlimmedPrimaryVertices"),
                       secVtxCollection = cms.InputTag("slimmedSecondaryVertices"), # FRA

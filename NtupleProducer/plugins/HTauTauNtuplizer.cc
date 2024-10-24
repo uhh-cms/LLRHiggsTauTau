@@ -192,6 +192,7 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   string theJECName;
   Int_t  theYear;
   string thePeriod;
+  string uncertScheme;
   // Bool_t theUseNoHFPFMet; // false: PFmet ; true: NoHFPFMet
   //Trigger
   vector<int> indexOfPath;
@@ -316,10 +317,11 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   //Float_t _PUReweight; //FRA January2019
   Float_t _rho;
   Int_t _nup;
-  Float_t _MC_weight_scale_muF0p5;
-  Float_t _MC_weight_scale_muF2;
-  Float_t _MC_weight_scale_muR0p5;
-  Float_t _MC_weight_scale_muR2;
+
+  std::vector<float> _MC_QCDscale = std::vector<float>(7, 0.); // QCD scale uncertainties computed per-histogram
+  std::vector<float> _MC_pdf = std::vector<float>(101, 0.);    // PDF uncertainties computed per-histogram
+  std::vector<float> _MC_astrong = std::vector<float>(2, 0.);  // Alpha strong uncertainties computed per-histogram
+  
   Float_t _MC_weight_PSWeight0;
   Float_t _MC_weight_PSWeight1;
   Float_t _MC_weight_PSWeight2;
@@ -337,7 +339,6 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   std::vector<Float_t> _mothers_e;
   std::vector<Long64_t> _mothers_trgSeparateMatch; // are the two legs matched to different HLT objs?
                                                    // stored bitwise for HLT paths as done for daughters_trgMatch
-
   
   // reco leptons
   //std::vector<TLorentzVector> _daughters;
@@ -850,7 +851,7 @@ HTauTauNtuplizer::HTauTauNtuplizer(const edm::ParameterSet& pset) : //reweight()
   // theUseNoHFPFMet = pset.getParameter<bool>("useNOHFMet");
   thePeriod = pset.getParameter<string>("period");
   //writeBestCandOnly = pset.getParameter<bool>("onlyBestCandidate");
-  //sampleName = pset.getParameter<string>("sampleName");
+  uncertScheme = pset.getParameter<string>("uncertaintyScheme");
   Nevt_Gen=0;
   Nevt_PassTrigger = 0;
   Npairs=0;
@@ -1219,10 +1220,7 @@ void HTauTauNtuplizer::Initialize(){
   //_PUReweight=0.; //FRA January2019
   _rho=0;
   _nup=-999;
-  _MC_weight_scale_muF0p5=0.;
-  _MC_weight_scale_muF2=0.;
-  _MC_weight_scale_muR0p5=0.;
-  _MC_weight_scale_muR2=0.;
+  
   _MC_weight_PSWeight0=0.;
   _MC_weight_PSWeight1=0.;
   _MC_weight_PSWeight2=0.;
@@ -1486,11 +1484,119 @@ void HTauTauNtuplizer::beginJob(){
     myTree->Branch("PUNumInteractions",&_PUNumInteractions,"PUNumInteractions/I");  
     myTree->Branch("daughters_genindex",&_daughters_genindex);
     myTree->Branch("MC_weight",&_MC_weight,"MC_weight/F");
-    myTree->Branch("MC_weight_scale_muF0p5",&_MC_weight_scale_muF0p5,"MC_weight_scale_muF0p5/F");
-    myTree->Branch("MC_weight_scale_muF2",&_MC_weight_scale_muF2,"MC_weight_scale_muF2/F");
-    myTree->Branch("MC_weight_scale_muR0p5",&_MC_weight_scale_muR0p5,"MC_weight_scale_muR0p5/F");
-    myTree->Branch("MC_weight_scale_muR2",&_MC_weight_scale_muR2,"MC_weight_scale_muR2/F");
-    myTree->Branch("MC_weight_PSWeight0",&_MC_weight_PSWeight0,"MC_weight_PSWeight0/F");
+
+	myTree->Branch("MC_QCDscale_0", &_MC_QCDscale[0], "MC_QCDscale_0/F");
+	myTree->Branch("MC_QCDscale_1", &_MC_QCDscale[1], "MC_QCDscale_1/F");
+	myTree->Branch("MC_QCDscale_2", &_MC_QCDscale[2], "MC_QCDscale_2/F");
+	myTree->Branch("MC_QCDscale_3", &_MC_QCDscale[3], "MC_QCDscale_3/F");
+	myTree->Branch("MC_QCDscale_4", &_MC_QCDscale[4], "MC_QCDscale_4/F");
+	myTree->Branch("MC_QCDscale_5", &_MC_QCDscale[5], "MC_QCDscale_5/F");
+	myTree->Branch("MC_QCDscale_6", &_MC_QCDscale[6], "MC_QCDscale_6/F");
+	myTree->Branch("MC_pdf_0", &_MC_pdf[0], "MC_pdf_0/F");
+	myTree->Branch("MC_pdf_1", &_MC_pdf[1], "MC_pdf_1/F");
+	myTree->Branch("MC_pdf_2", &_MC_pdf[2], "MC_pdf_2/F");
+	myTree->Branch("MC_pdf_3", &_MC_pdf[3], "MC_pdf_3/F");
+	myTree->Branch("MC_pdf_4", &_MC_pdf[4], "MC_pdf_4/F");
+	myTree->Branch("MC_pdf_5", &_MC_pdf[5], "MC_pdf_5/F");
+	myTree->Branch("MC_pdf_6", &_MC_pdf[6], "MC_pdf_6/F");
+	myTree->Branch("MC_pdf_7", &_MC_pdf[7], "MC_pdf_7/F");
+	myTree->Branch("MC_pdf_8", &_MC_pdf[8], "MC_pdf_8/F");
+	myTree->Branch("MC_pdf_9", &_MC_pdf[9], "MC_pdf_9/F");
+	myTree->Branch("MC_pdf_10", &_MC_pdf[10], "MC_pdf_10/F");
+	myTree->Branch("MC_pdf_11", &_MC_pdf[11], "MC_pdf_11/F");
+	myTree->Branch("MC_pdf_12", &_MC_pdf[12], "MC_pdf_12/F");
+	myTree->Branch("MC_pdf_13", &_MC_pdf[13], "MC_pdf_13/F");
+	myTree->Branch("MC_pdf_14", &_MC_pdf[14], "MC_pdf_14/F");
+	myTree->Branch("MC_pdf_15", &_MC_pdf[15], "MC_pdf_15/F");
+	myTree->Branch("MC_pdf_16", &_MC_pdf[16], "MC_pdf_16/F");
+	myTree->Branch("MC_pdf_17", &_MC_pdf[17], "MC_pdf_17/F");
+	myTree->Branch("MC_pdf_18", &_MC_pdf[18], "MC_pdf_18/F");
+	myTree->Branch("MC_pdf_19", &_MC_pdf[19], "MC_pdf_19/F");
+	myTree->Branch("MC_pdf_20", &_MC_pdf[20], "MC_pdf_20/F");
+	myTree->Branch("MC_pdf_21", &_MC_pdf[21], "MC_pdf_21/F");
+	myTree->Branch("MC_pdf_22", &_MC_pdf[22], "MC_pdf_22/F");
+	myTree->Branch("MC_pdf_23", &_MC_pdf[23], "MC_pdf_23/F");
+	myTree->Branch("MC_pdf_24", &_MC_pdf[24], "MC_pdf_24/F");
+	myTree->Branch("MC_pdf_25", &_MC_pdf[25], "MC_pdf_25/F");
+	myTree->Branch("MC_pdf_26", &_MC_pdf[26], "MC_pdf_26/F");
+	myTree->Branch("MC_pdf_27", &_MC_pdf[27], "MC_pdf_27/F");
+	myTree->Branch("MC_pdf_28", &_MC_pdf[28], "MC_pdf_28/F");
+	myTree->Branch("MC_pdf_29", &_MC_pdf[29], "MC_pdf_29/F");
+	myTree->Branch("MC_pdf_30", &_MC_pdf[30], "MC_pdf_30/F");
+	myTree->Branch("MC_pdf_31", &_MC_pdf[31], "MC_pdf_31/F");
+	myTree->Branch("MC_pdf_32", &_MC_pdf[32], "MC_pdf_32/F");
+	myTree->Branch("MC_pdf_33", &_MC_pdf[33], "MC_pdf_33/F");
+	myTree->Branch("MC_pdf_34", &_MC_pdf[34], "MC_pdf_34/F");
+	myTree->Branch("MC_pdf_35", &_MC_pdf[35], "MC_pdf_35/F");
+	myTree->Branch("MC_pdf_36", &_MC_pdf[36], "MC_pdf_36/F");
+	myTree->Branch("MC_pdf_37", &_MC_pdf[37], "MC_pdf_37/F");
+	myTree->Branch("MC_pdf_38", &_MC_pdf[38], "MC_pdf_38/F");
+	myTree->Branch("MC_pdf_39", &_MC_pdf[39], "MC_pdf_39/F");
+	myTree->Branch("MC_pdf_40", &_MC_pdf[40], "MC_pdf_40/F");
+	myTree->Branch("MC_pdf_41", &_MC_pdf[41], "MC_pdf_41/F");
+	myTree->Branch("MC_pdf_42", &_MC_pdf[42], "MC_pdf_42/F");
+	myTree->Branch("MC_pdf_43", &_MC_pdf[43], "MC_pdf_43/F");
+	myTree->Branch("MC_pdf_44", &_MC_pdf[44], "MC_pdf_44/F");
+	myTree->Branch("MC_pdf_45", &_MC_pdf[45], "MC_pdf_45/F");
+	myTree->Branch("MC_pdf_46", &_MC_pdf[46], "MC_pdf_46/F");
+	myTree->Branch("MC_pdf_47", &_MC_pdf[47], "MC_pdf_47/F");
+	myTree->Branch("MC_pdf_48", &_MC_pdf[48], "MC_pdf_48/F");
+	myTree->Branch("MC_pdf_49", &_MC_pdf[49], "MC_pdf_49/F");
+	myTree->Branch("MC_pdf_50", &_MC_pdf[50], "MC_pdf_50/F");
+	myTree->Branch("MC_pdf_51", &_MC_pdf[51], "MC_pdf_51/F");
+	myTree->Branch("MC_pdf_52", &_MC_pdf[52], "MC_pdf_52/F");
+	myTree->Branch("MC_pdf_53", &_MC_pdf[53], "MC_pdf_53/F");
+	myTree->Branch("MC_pdf_54", &_MC_pdf[54], "MC_pdf_54/F");
+	myTree->Branch("MC_pdf_55", &_MC_pdf[55], "MC_pdf_55/F");
+	myTree->Branch("MC_pdf_56", &_MC_pdf[56], "MC_pdf_56/F");
+	myTree->Branch("MC_pdf_57", &_MC_pdf[57], "MC_pdf_57/F");
+	myTree->Branch("MC_pdf_58", &_MC_pdf[58], "MC_pdf_58/F");
+	myTree->Branch("MC_pdf_59", &_MC_pdf[59], "MC_pdf_59/F");
+	myTree->Branch("MC_pdf_60", &_MC_pdf[60], "MC_pdf_60/F");
+	myTree->Branch("MC_pdf_61", &_MC_pdf[61], "MC_pdf_61/F");
+	myTree->Branch("MC_pdf_62", &_MC_pdf[62], "MC_pdf_62/F");
+	myTree->Branch("MC_pdf_63", &_MC_pdf[63], "MC_pdf_63/F");
+	myTree->Branch("MC_pdf_64", &_MC_pdf[64], "MC_pdf_64/F");
+	myTree->Branch("MC_pdf_65", &_MC_pdf[65], "MC_pdf_65/F");
+	myTree->Branch("MC_pdf_66", &_MC_pdf[66], "MC_pdf_66/F");
+	myTree->Branch("MC_pdf_67", &_MC_pdf[67], "MC_pdf_67/F");
+	myTree->Branch("MC_pdf_68", &_MC_pdf[68], "MC_pdf_68/F");
+	myTree->Branch("MC_pdf_69", &_MC_pdf[69], "MC_pdf_69/F");
+	myTree->Branch("MC_pdf_70", &_MC_pdf[70], "MC_pdf_70/F");
+	myTree->Branch("MC_pdf_71", &_MC_pdf[71], "MC_pdf_71/F");
+	myTree->Branch("MC_pdf_72", &_MC_pdf[72], "MC_pdf_72/F");
+	myTree->Branch("MC_pdf_73", &_MC_pdf[73], "MC_pdf_73/F");
+	myTree->Branch("MC_pdf_74", &_MC_pdf[74], "MC_pdf_74/F");
+	myTree->Branch("MC_pdf_75", &_MC_pdf[75], "MC_pdf_75/F");
+	myTree->Branch("MC_pdf_76", &_MC_pdf[76], "MC_pdf_76/F");
+	myTree->Branch("MC_pdf_77", &_MC_pdf[77], "MC_pdf_77/F");
+	myTree->Branch("MC_pdf_78", &_MC_pdf[78], "MC_pdf_78/F");
+	myTree->Branch("MC_pdf_79", &_MC_pdf[79], "MC_pdf_79/F");
+	myTree->Branch("MC_pdf_80", &_MC_pdf[80], "MC_pdf_80/F");
+	myTree->Branch("MC_pdf_81", &_MC_pdf[81], "MC_pdf_81/F");
+	myTree->Branch("MC_pdf_82", &_MC_pdf[82], "MC_pdf_82/F");
+	myTree->Branch("MC_pdf_83", &_MC_pdf[83], "MC_pdf_83/F");
+	myTree->Branch("MC_pdf_84", &_MC_pdf[84], "MC_pdf_84/F");
+	myTree->Branch("MC_pdf_85", &_MC_pdf[85], "MC_pdf_85/F");
+	myTree->Branch("MC_pdf_86", &_MC_pdf[86], "MC_pdf_86/F");
+	myTree->Branch("MC_pdf_87", &_MC_pdf[87], "MC_pdf_87/F");
+	myTree->Branch("MC_pdf_88", &_MC_pdf[88], "MC_pdf_88/F");
+	myTree->Branch("MC_pdf_89", &_MC_pdf[89], "MC_pdf_89/F");
+	myTree->Branch("MC_pdf_90", &_MC_pdf[90], "MC_pdf_90/F");
+	myTree->Branch("MC_pdf_91", &_MC_pdf[91], "MC_pdf_91/F");
+	myTree->Branch("MC_pdf_92", &_MC_pdf[92], "MC_pdf_92/F");
+	myTree->Branch("MC_pdf_93", &_MC_pdf[93], "MC_pdf_93/F");
+	myTree->Branch("MC_pdf_94", &_MC_pdf[94], "MC_pdf_94/F");
+	myTree->Branch("MC_pdf_95", &_MC_pdf[95], "MC_pdf_95/F");
+	myTree->Branch("MC_pdf_96", &_MC_pdf[96], "MC_pdf_96/F");
+	myTree->Branch("MC_pdf_97", &_MC_pdf[97], "MC_pdf_97/F");
+	myTree->Branch("MC_pdf_98", &_MC_pdf[98], "MC_pdf_98/F");
+	myTree->Branch("MC_pdf_99", &_MC_pdf[99], "MC_pdf_99/F");
+	myTree->Branch("MC_pdf_100", &_MC_pdf[100], "MC_pdf_100/F");
+	myTree->Branch("MC_astrong_0", &_MC_astrong[0], "MC_astrong_0/F");
+	myTree->Branch("MC_astrong_1", &_MC_astrong[1], "MC_astrong_1/F");
+	
+	myTree->Branch("MC_weight_PSWeight0",&_MC_weight_PSWeight0,"MC_weight_PSWeight0/F");
     myTree->Branch("MC_weight_PSWeight1",&_MC_weight_PSWeight1,"MC_weight_PSWeight1/F");
     myTree->Branch("MC_weight_PSWeight2",&_MC_weight_PSWeight2,"MC_weight_PSWeight2/F");
     myTree->Branch("MC_weight_PSWeight3",&_MC_weight_PSWeight3,"MC_weight_PSWeight3/F");
@@ -2012,32 +2118,76 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
 
     if (lheeventinfo.isValid()) {
       _nup=lheeventinfo->hepeup().NUP;
-      if (lheeventinfo->weights().size() > 6) // access weights only if weights() is filled
-      {
-        _MC_weight_scale_muF0p5 = _aMCatNLOweight*(lheeventinfo->weights()[2].wgt)/(lheeventinfo->originalXWGTUP()); // muF = 0.5 | muR = 1
-        _MC_weight_scale_muF2 = _aMCatNLOweight*(lheeventinfo->weights()[1].wgt)/(lheeventinfo->originalXWGTUP()); // muF = 2 | muR = 1
-        _MC_weight_scale_muR0p5 = _aMCatNLOweight*(lheeventinfo->weights()[6].wgt)/(lheeventinfo->originalXWGTUP()); // muF = 1 | muR = 0.5
-        _MC_weight_scale_muR2 = _aMCatNLOweight*(lheeventinfo->weights()[3].wgt)/(lheeventinfo->originalXWGTUP()); // muF = 1 | muR = 2
-      }
-    }
+
+	  const auto lheweights = lheeventinfo->weights();
+
+	  // PDF and alpha strong uncertainties
+	  unsigned _MC_pdf_first_idx = 0;
+	  unsigned _MC_pdf_last_idx = _MC_pdf.size();
+	  if (uncertScheme.find("MadGraph") != std::string::npos)
+		{
+		  if(uncertScheme == "MadGraph45A") _MC_pdf_first_idx = 47;
+		  else if (uncertScheme == "MadGraph45B") _MC_pdf_first_idx = 1611;
+		  else if (uncertScheme == "MadGraph9A") _MC_pdf_first_idx = 10;
+		  else if (uncertScheme == "MadGraph9B") _MC_pdf_first_idx = 573;
+		}
+	  else if (uncertScheme.find("Powheg") != std::string::npos)
+		{
+		  _MC_pdf_first_idx = 10;
+		}
+	  else if (uncertScheme.find("None") == std::string::npos)
+		{
+		  throw cms::Exception("InvalidOption") << "uncertainty scheme option is not valid";
+		}
+
+	  for (unsigned pdf_idx = _MC_pdf_first_idx; pdf_idx <= _MC_pdf_first_idx+_MC_pdf_last_idx; ++pdf_idx) {
+		_MC_pdf[pdf_idx-_MC_pdf_first_idx] = lheweights[pdf_idx].wgt;
+	  }
+
+	  if (uncertScheme != "None")
+		{
+		  _MC_astrong[0] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+1].wgt;
+		  _MC_astrong[1] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+2].wgt;
+		}
+	  else {
+		_MC_astrong[0] = -99.f;
+		_MC_astrong[1] = -99.f;
+	  }
+	  
+	  // QCD scale
+	  if (uncertScheme.find("MadGraph45") != std::string::npos)
+		{
+		  _MC_QCDscale[0] = lheweights[0].wgt; // muF1p0_muR1p0
+		  _MC_QCDscale[1] = lheweights[5].wgt;
+		  _MC_QCDscale[2] = lheweights[10].wgt;
+		  _MC_QCDscale[3] = lheweights[15].wgt;
+		  _MC_QCDscale[4] = lheweights[20].wgt;
+		  _MC_QCDscale[5] = lheweights[30].wgt;
+		  _MC_QCDscale[6] = lheweights[40].wgt;
+		}
+	  else if (uncertScheme.find("MadGraph9") != std::string::npos or
+			   uncertScheme.find("Powheg9") != std::string::npos)
+		{
+		  _MC_QCDscale[0] = lheweights[0].wgt; // muF1p0_muR1p0
+		  _MC_QCDscale[1] = lheweights[1].wgt;
+		  _MC_QCDscale[2] = lheweights[2].wgt;
+		  _MC_QCDscale[3] = lheweights[3].wgt;
+		  _MC_QCDscale[4] = lheweights[4].wgt;
+		  _MC_QCDscale[5] = lheweights[6].wgt;
+		  _MC_QCDscale[6] = lheweights[8].wgt;
+		}
+	  else {
+		_MC_QCDscale[0] = -99.f;
+		_MC_QCDscale[1] = -99.f;
+		_MC_QCDscale[2] = -99.f;
+		_MC_QCDscale[3] = -99.f;
+		_MC_QCDscale[4] = -99.f;
+		_MC_QCDscale[5] = -99.f;
+		_MC_QCDscale[6] = -99.f;
+	  }
+	}
 
   }
-
-  /*if (theUseNoHFPFMet) event.getByLabel("slimmedMETsNoHF",metHandle);
-  else event.getByLabel("slimmedMETs",metHandle);
-  
-  if(theisMC){
-    edm::Handle<LHEEventProduct> lheeventinfo;
-    event.getByLabel("LHEEventProduct",lheeventinfo);
-    if (lheeventinfo.isValid()) {
-      _nup=lheeventinfo->hepeup().NUP;
-    }
-    edm::Handle<GenEventInfoProduct> genEvt;
-    event.getByLabel("generator",genEvt);
-    _aMCatNLOweight=genEvt->weight();
-    _MC_weight = _aMCatNLOweight; // duplicated
-  }*/
-
 
   const edm::View<pat::CompositeCandidate>* cands = candHandle.product();
   const edm::View<reco::Candidate>* daus = dauHandle.product();
