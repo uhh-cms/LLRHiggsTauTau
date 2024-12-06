@@ -2127,13 +2127,13 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
 	  if (uncertScheme.find("MadGraph") != std::string::npos)
 		{
 		  if(uncertScheme == "MadGraph45A") _MC_pdf_first_idx = 47;
-		  else if (uncertScheme == "MadGraph45B") _MC_pdf_first_idx = 1611;
-		  else if (uncertScheme == "MadGraph9A") _MC_pdf_first_idx = 10;
+		  else if (uncertScheme == "MadGraph45B") _MC_pdf_first_idx = 611;
+		  else if (uncertScheme == "MadGraph9A") _MC_pdf_first_idx = 9;
 		  else if (uncertScheme == "MadGraph9B") _MC_pdf_first_idx = 573;
 		}
 	  else if (uncertScheme.find("Powheg") != std::string::npos)
 		{
-		  _MC_pdf_first_idx = 10;
+		  _MC_pdf_first_idx = 9;
 		}
 	  else if (uncertScheme.find("None") == std::string::npos)
 		{
