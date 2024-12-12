@@ -19,6 +19,7 @@
 #include <utility>
 #include <TNtuple.h>
 #include <bitset>
+#include <regex>
 //#include <XYZTLorentzVector.h>
 
 // user include files
@@ -99,6 +100,7 @@
 #include "Geometry/HcalCommonData/interface/HcalParametersFromDD.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "JetMETCorrections/Objects/interface/JetCorrector.h"
@@ -248,6 +250,7 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   edm::EDGetTokenT<edm::MergeableCounter> theTotTag;
   edm::EDGetTokenT<edm::MergeableCounter> thePassTag;
   edm::EDGetTokenT<LHEEventProduct> theLHEPTag;
+  edm::EDGetTokenT<LHERunInfoProduct> theLHERunInfoTag;
   edm::EDGetTokenT<reco::BeamSpot> beamSpotTag;
   edm::EDGetTokenT<BXVector<l1t::Tau> > theL1TauTag;
   edm::EDGetTokenT<BXVector<l1t::Jet> > theL1JetTag;
@@ -788,6 +791,11 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   // not a output tree branch, but used to assess object overlap in trg match
   // use as vTrgMatchedToDau_idx.at(idaughter).at(idxHLTPath)
   std::vector<std::vector<int>> vTrgMatchedToDau_idx;
+
+  // PDF, alpha strong and QCD uncertainty schemes
+  double st_mult;
+  unsigned _MC_pdf_first_idx;
+  unsigned _MC_pdf_last_idx;
 };
 
 const int HTauTauNtuplizer::ntauIds; // definition of static member
@@ -831,6 +839,7 @@ HTauTauNtuplizer::HTauTauNtuplizer(const edm::ParameterSet& pset) : //reweight()
   theTotTag            (consumes<edm::MergeableCounter, edm::InLumi>     (pset.getParameter<edm::InputTag>("totCollection"))),
   thePassTag           (consumes<edm::MergeableCounter, edm::InLumi>     (pset.getParameter<edm::InputTag>("passCollection"))),
   theLHEPTag           (consumes<LHEEventProduct>                        (pset.getParameter<edm::InputTag>("lhepCollection"))),
+  theLHERunInfoTag     (consumes<LHERunInfoProduct, edm::InRun>          (pset.getParameter<edm::InputTag>("lhepCollection"))),
   beamSpotTag          (consumes<reco::BeamSpot>                         (pset.getParameter<edm::InputTag>("beamSpot"))),
   theL1TauTag          (consumes<BXVector<l1t::Tau>>                     (pset.getParameter<edm::InputTag>("stage2TauCollection"))),
   theL1JetTag          (consumes<BXVector<l1t::Jet>>                     (pset.getParameter<edm::InputTag>("stage2JetCollection"))),
@@ -2120,31 +2129,6 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
       _nup=lheeventinfo->hepeup().NUP;
 
 	  const auto lheweights = lheeventinfo->weights();
-
-	  // PDF and alpha strong uncertainties
-	  unsigned _MC_pdf_first_idx = 0;
-	  unsigned _MC_pdf_last_idx = _MC_pdf.size();
-	  if (uncertScheme.find("MadGraph") != std::string::npos)
-		{
-		  if(uncertScheme == "MadGraph45A") _MC_pdf_first_idx = 47;
-		  else if (uncertScheme == "MadGraph45B") _MC_pdf_first_idx = 611;
-		  else if (uncertScheme == "MadGraph9A") _MC_pdf_first_idx = 9;
-		  else if (uncertScheme == "MadGraph9B") _MC_pdf_first_idx = 573;
-		}
-	  else if (uncertScheme.find("Powheg") != std::string::npos)
-		{
-		  _MC_pdf_first_idx = 9;
-		}
-	  else if (uncertScheme.find("None") == std::string::npos)
-		{
-		  throw cms::Exception("InvalidOption") << "uncertainty scheme option is not valid";
-		}
-
-	  // handle the factor of 2 error in the MINIAOD ST_s-channel_4f sample
-	  double st_mult = 1.;
-	  if (uncertScheme == "MadGraph9B_STlepton") {
-		st_mult = 2.;
-	  }
 		  
 	  for (unsigned pdf_idx = _MC_pdf_first_idx; pdf_idx <= _MC_pdf_first_idx+_MC_pdf_last_idx; ++pdf_idx) {
 		if (pdf_idx != _MC_pdf_first_idx) {
@@ -3981,11 +3965,69 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
     //    edm::LogInfo("AnalyzeRates")<<"Added path "<<pathName<<" to foundPaths";
     } 
   }
-  
+
+  // PDF, alpha strong and QCD uncertainty schemes
+  _MC_pdf_first_idx = 0;
+  _MC_pdf_last_idx = _MC_pdf.size();
+  if (uncertScheme.find("MadGraph") != std::string::npos)
+	{
+	  if(uncertScheme == "MadGraph45A") _MC_pdf_first_idx = 47;
+	  else if (uncertScheme == "MadGraph45B") _MC_pdf_first_idx = 611;
+	  else if (uncertScheme == "MadGraph9A") _MC_pdf_first_idx = 9;
+	  else if (uncertScheme == "MadGraph9B") _MC_pdf_first_idx = 573;
+	}
+  else if (uncertScheme.find("Powheg") != std::string::npos)
+	{
+	  _MC_pdf_first_idx = 9;
+	}
+  else if (uncertScheme.find("None") == std::string::npos)
+	{
+	  throw cms::Exception("InvalidOption") << "uncertainty scheme option is not valid";
+	}
+
+  // handle the factor of 2 error in the MINIAOD ST_s-channel_4f sample
+  st_mult = 1.;
+  if (uncertScheme == "MadGraph9B_STlepton") {
+	st_mult = 2.;
+  }
 }
 
+void HTauTauNtuplizer::endRun(edm::Run const& iRun, edm::EventSetup const& iSetup) {
+  // checks if PDF ID of QCD scale reference matches PDF ID of PDF reference
+  
+  edm::Handle<LHERunInfoProduct> run;
+  iRun.getByToken(theLHERunInfoTag, run);
+  typedef std::vector<LHERunInfoProduct::Header>::const_iterator headers_const_iterator;
 
-void HTauTauNtuplizer::endRun(edm::Run const&, edm::EventSetup const&){
+  int pdf_id_qcd_scale_ref = 1;
+  int pdf_id_pdf_ref = 2; // ensure the two IDs are different in case the for-loop is ignored
+  unsigned weight_lines_counter = 0;
+  
+  std::regex reg("<weight.+ PDF=\"(.*)\" .+>.*<\\/weight>");
+  for (headers_const_iterator iter = run->headers_begin(); iter != run->headers_end(); iter++) {
+	std::vector<std::string> lines = iter->lines();
+	for (unsigned int iLine = 0; iLine < lines.size(); iLine++) {
+	  std::smatch match;
+	  std::regex_search(lines.at(iLine), match, reg);
+	  if (match.size()==2) {
+		if (weight_lines_counter == 0) {
+		  pdf_id_qcd_scale_ref = std::atoi(match[1].str().c_str());
+		}
+		else if (weight_lines_counter == _MC_pdf_first_idx) {
+		  pdf_id_pdf_ref = std::atoi(match[1].str().c_str());
+		}
+		weight_lines_counter += 1;
+	  }
+	  // no other checks, should exit
+	  if (weight_lines_counter >= _MC_pdf_first_idx) {
+		break;
+	  }
+	}
+  }
+
+  if (pdf_id_qcd_scale_ref != pdf_id_pdf_ref) {
+	throw cms::Exception("InvalidOption") << "PDF ID of QCD scale reference weight does not match PDF ID of PDF reference weight";
+  }
 }
 
 void HTauTauNtuplizer::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const& iSetup){
