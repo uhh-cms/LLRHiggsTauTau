@@ -728,6 +728,14 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   
   std::vector<Int_t>   _ak8jets_nsubjets;
 
+  std::vector<Float_t>_ak8jets_chEmEF;
+  std::vector<Float_t>_ak8jets_chHEF;
+  std::vector<Float_t>_ak8jets_nEmEF;
+  std::vector<Float_t>_ak8jets_nHEF;
+  std::vector<Int_t>_ak8jets_chMult;
+  std::vector<Int_t>_ak8jets_neMult;
+  std::vector<Float_t>_ak8jets_MUF;
+
   // subjets of ak8 -- store ALL subjets, and link them with an idx to the ak8 jet vectors
   std::vector<Float_t> _subjets_px;
   std::vector<Float_t> _subjets_py;
@@ -772,6 +780,7 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   std::vector<Float_t> _bdiscr22; // ParticleNetAK4JetTags_probg
   
   std::vector<Int_t> _jetID; //1=loose, 2=tight, 3=tightlepveto
+  std::vector<Int_t> _jetID_AK8Puppi; //1=loose, 2=tight, 3=tightlepveto
   std::vector<Float_t> _jetrawf;
 
   std::vector<Float_t> _jets_JER; // Jet Energy Resolution
@@ -1288,6 +1297,7 @@ void HTauTauNtuplizer::Initialize(){
   _bdiscr22.clear();
   
   _jetID.clear();
+  _jetID_AK8Puppi.clear();
   _jetrawf.clear();
   _jets_JER.clear(); // Jet Energy Resolution
 
@@ -1320,6 +1330,13 @@ void HTauTauNtuplizer::Initialize(){
   _ak8jets_particleNetMDJetTags_probQCD.clear();
   _ak8jets_particleNetMDJetTags_mass.clear();
   _ak8jets_nsubjets.clear();
+  _ak8jets_chEmEF.clear();
+  _ak8jets_chHEF.clear();
+  _ak8jets_nEmEF.clear();
+  _ak8jets_nHEF.clear();
+  _ak8jets_chMult.clear();
+  _ak8jets_neMult.clear();
+  _ak8jets_MUF.clear();
 
   _subjets_px.clear();
   _subjets_py.clear();
@@ -1846,6 +1863,7 @@ void HTauTauNtuplizer::beginJob(){
   myTree->Branch("bParticleNetAK4JetTags_probg", &_bdiscr22);
   
   myTree->Branch("PFjetID",&_jetID);
+  myTree->Branch("PFjetID_AK8Puppi", &_jetID_AK8Puppi);
   myTree->Branch("jetRawf",&_jetrawf);
   myTree->Branch("jets_JER",&_jets_JER);
 
@@ -1882,6 +1900,14 @@ void HTauTauNtuplizer::beginJob(){
   myTree->Branch("ak8jets_particleNetMDJetTags_mass", &_ak8jets_particleNetMDJetTags_mass);
 
   myTree->Branch("ak8jets_nsubjets", &_ak8jets_nsubjets);
+
+  myTree->Branch("ak8jets_chEmEF" , &_ak8jets_chEmEF);
+  myTree->Branch("ak8jets_chHEF"  , &_ak8jets_chHEF);
+  myTree->Branch("ak8jets_nEmEF"  , &_ak8jets_nEmEF);
+  myTree->Branch("ak8jets_nHEF"   , &_ak8jets_nHEF);
+  myTree->Branch("ak8jets_MUF"    , &_ak8jets_MUF);
+  myTree->Branch("ak8jets_neMult" , &_ak8jets_neMult);
+  myTree->Branch("ak8jets_chMult" , &_ak8jets_chMult);
 
   myTree->Branch("subjets_px", &_subjets_px);
   myTree->Branch("subjets_py", &_subjets_py);
@@ -2942,6 +2968,89 @@ void HTauTauNtuplizer::FillFatJet(const edm::View<pat::Jet>* fatjets, const edm:
         }
       }
       _ak8jets_nsubjets.push_back(nsubj);
+
+    // PF jet ID for AK8 Puppi (same as AK4 Puppi)
+    float NHF                 = ijet->neutralHadronEnergyFraction();
+    float NEMF                = ijet->neutralEmEnergyFraction();
+    float CHF                 = ijet->chargedHadronEnergyFraction();
+    float MUF                 = ijet->muonEnergyFraction();
+    float CEMF                = ijet->chargedEmEnergyFraction();
+    int   NumNeutralParticles = ijet->neutralMultiplicity();
+    int   chargedMult         = ijet->chargedMultiplicity();
+    int   NumConst            = ijet->chargedMultiplicity()+NumNeutralParticles;
+    float CHM                 = ijet->chargedMultiplicity();
+    float absjeta             = fabs(ijet->eta());
+
+    _ak8jets_chEmEF.push_back(CEMF);
+    _ak8jets_chHEF.push_back(CHF);
+    _ak8jets_nEmEF.push_back(NEMF);
+    _ak8jets_nHEF.push_back(NHF);
+    _ak8jets_chMult.push_back(chargedMult);
+    _ak8jets_neMult.push_back(NumNeutralParticles);
+    _ak8jets_MUF.push_back(MUF);
+
+    // JetID for AK8 Puppi (same as AK4 Puppi)
+    // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL
+    // Same recommendations for 2016 pre- and post- VFP
+    int jetid=0;
+    bool tightJetID = false;
+    bool tightLepVetoJetID = false;
+    //2016 data
+    if (theYear == 2016)
+    {
+      if (absjeta <= 2.4)
+      {
+        tightJetID        = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && CHF>0   && CHM>0 );
+        tightLepVetoJetID = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && MUF<0.8 && CHF>0 && CHM>0 && CEMF<0.80 );
+      }
+
+      else if (absjeta > 2.4 && absjeta <= 2.7)
+      {
+        tightJetID        = ( NHF<0.98 && NEMF<0.99 );
+      }
+
+      else if (absjeta > 2.7 && absjeta <= 3.0)
+      {
+        tightJetID        = ( NumNeutralParticles>=1 );
+      }
+
+      else
+      {
+        tightJetID        = ( NEMF<0.9 && NumNeutralParticles>2 );
+      }
+
+      if (tightJetID) ++jetid;
+      if (tightLepVetoJetID) ++jetid;
+    }
+    // 2017 and 2018 data
+    else if (theYear == 2017 || theYear == 2018)
+    {
+      if (absjeta <= 2.6)
+      {
+        tightJetID        = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && CHF>0   && CHM>0 );
+        tightLepVetoJetID = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && MUF<0.8 && CHF>0 && CHM>0 && CEMF<0.80 );
+      }
+
+      else if (absjeta > 2.6 && absjeta <= 2.7)
+      {
+        tightJetID        = ( NHF<0.90 && NEMF<0.99 );
+        tightLepVetoJetID = ( NHF<0.90 && NEMF<0.99 && MUF<0.8 && CEMF<0.80 );
+      }
+
+      else if (absjeta > 2.7 && absjeta <= 3.0)
+      {
+        tightJetID        = ( NHF < 0.9999 );
+      }
+
+      else
+      {
+        tightJetID        = ( NEMF<0.9 && NumNeutralParticles>2 );
+      }
+      if (tightJetID) ++jetid;
+      if (tightLepVetoJetID) ++jetid;
+    }
+
+    _jetID_AK8Puppi.push_back(jetid);
     }
 }
 
