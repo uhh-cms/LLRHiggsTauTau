@@ -2714,13 +2714,13 @@ int HTauTauNtuplizer::FillJet(const edm::View<pat::Jet> *jets, const edm::Event&
     // 2017 and 2018 data
     else if (theYear == 2017 || theYear == 2018)
     {
-      if (absjeta <= 2.4)
+      if (absjeta <= 2.6)
       {
         tightJetID        = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && CHF>0   && CHM>0 );
         tightLepVetoJetID = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && MUF<0.8 && CHF>0 && CHM>0 && CEMF<0.80 );
       }
 
-      else if (absjeta > 2.4 && absjeta <= 2.7)
+      else if (absjeta > 2.6 && absjeta <= 2.7)
       {
         tightJetID        = ( NHF<0.90 && NEMF<0.99 && CHM>0 );
         tightLepVetoJetID = ( NHF<0.90 && NEMF<0.99 && CHM>0 && MUF<0.8 && CEMF<0.80 );
