@@ -2140,8 +2140,19 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
 		  throw cms::Exception("InvalidOption") << "uncertainty scheme option is not valid";
 		}
 
+	  // handle the factor of 2 error in the MINIAOD ST_s-channel_4f sample
+	  double st_mult = 1.;
+	  if (uncertScheme == "MadGraph9B_STlepton") {
+		st_mult = 2.;
+	  }
+		  
 	  for (unsigned pdf_idx = _MC_pdf_first_idx; pdf_idx <= _MC_pdf_first_idx+_MC_pdf_last_idx; ++pdf_idx) {
-		_MC_pdf[pdf_idx-_MC_pdf_first_idx] = lheweights[pdf_idx].wgt;
+		if (pdf_idx != _MC_pdf_first_idx) {
+		  _MC_pdf[pdf_idx-_MC_pdf_first_idx] = st_mult * lheweights[pdf_idx].wgt;
+		}
+		else {
+		  _MC_pdf[pdf_idx-_MC_pdf_first_idx] = lheweights[pdf_idx].wgt;
+		}
 	  }
 
 	  if (uncertScheme != "None")
@@ -2169,12 +2180,12 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
 			   uncertScheme.find("Powheg9") != std::string::npos)
 		{
 		  _MC_QCDscale[0] = lheweights[0].wgt; // muF1p0_muR1p0
-		  _MC_QCDscale[1] = lheweights[1].wgt;
-		  _MC_QCDscale[2] = lheweights[2].wgt;
-		  _MC_QCDscale[3] = lheweights[3].wgt;
-		  _MC_QCDscale[4] = lheweights[4].wgt;
-		  _MC_QCDscale[5] = lheweights[6].wgt;
-		  _MC_QCDscale[6] = lheweights[8].wgt;
+		  _MC_QCDscale[1] = st_mult * lheweights[1].wgt;
+		  _MC_QCDscale[2] = st_mult * lheweights[2].wgt;
+		  _MC_QCDscale[3] = st_mult * lheweights[3].wgt;
+		  _MC_QCDscale[4] = st_mult * lheweights[4].wgt;
+		  _MC_QCDscale[5] = st_mult * lheweights[6].wgt;
+		  _MC_QCDscale[6] = st_mult * lheweights[8].wgt;
 		}
 	  else {
 		_MC_QCDscale[0] = -99.f;
@@ -3976,6 +3987,7 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
 
 void HTauTauNtuplizer::endRun(edm::Run const&, edm::EventSetup const&){
 }
+
 void HTauTauNtuplizer::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const& iSetup){
   if (theisMC)
   {
