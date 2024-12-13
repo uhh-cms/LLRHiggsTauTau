@@ -2139,15 +2139,8 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
 		}
 	  }
 
-	  if (uncertScheme != "None")
-		{
-		  _MC_astrong[0] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+1].wgt;
-		  _MC_astrong[1] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+2].wgt;
-		}
-	  else {
-		_MC_astrong[0] = -99.f;
-		_MC_astrong[1] = -99.f;
-	  }
+	  _MC_astrong[0] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+1].wgt;
+	  _MC_astrong[1] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+2].wgt;
 	  
 	  // QCD scale
 	  if (uncertScheme.find("MadGraph45") != std::string::npos)
@@ -2171,15 +2164,6 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
 		  _MC_QCDscale[5] = st_mult * lheweights[6].wgt;
 		  _MC_QCDscale[6] = st_mult * lheweights[8].wgt;
 		}
-	  else {
-		_MC_QCDscale[0] = -99.f;
-		_MC_QCDscale[1] = -99.f;
-		_MC_QCDscale[2] = -99.f;
-		_MC_QCDscale[3] = -99.f;
-		_MC_QCDscale[4] = -99.f;
-		_MC_QCDscale[5] = -99.f;
-		_MC_QCDscale[6] = -99.f;
-	  }
 	}
 
   }
@@ -3974,15 +3958,15 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
 	  if(uncertScheme == "MadGraph45A") _MC_pdf_first_idx = 47;
 	  else if (uncertScheme == "MadGraph45B") _MC_pdf_first_idx = 611;
 	  else if (uncertScheme == "MadGraph9A") _MC_pdf_first_idx = 9;
-	  else if (uncertScheme == "MadGraph9B") _MC_pdf_first_idx = 573;
+	  else if (uncertScheme.find("MadGraph9B") != std::string::npos) _MC_pdf_first_idx = 573;
 	}
   else if (uncertScheme.find("Powheg") != std::string::npos)
 	{
 	  _MC_pdf_first_idx = 9;
 	}
-  else if (uncertScheme.find("None") == std::string::npos)
+  else
 	{
-	  throw cms::Exception("InvalidOption") << "uncertainty scheme option is not valid";
+	  throw cms::Exception("InvalidOption") << "uncertainty scheme " << uncertScheme << " option is not valid";
 	}
 
   // handle the factor of 2 error in the MINIAOD ST_s-channel_4f sample
@@ -4009,6 +3993,7 @@ void HTauTauNtuplizer::endRun(edm::Run const& iRun, edm::EventSetup const& iSetu
 	for (unsigned int iLine = 0; iLine < lines.size(); iLine++) {
 	  std::smatch match;
 	  std::regex_search(lines.at(iLine), match, reg);
+	  std::cout << lines.at(iLine) << std::endl;
 	  if (match.size()==2) {
 		if (weight_lines_counter == 0) {
 		  pdf_id_qcd_scale_ref = std::atoi(match[1].str().c_str());
@@ -4017,16 +4002,22 @@ void HTauTauNtuplizer::endRun(edm::Run const& iRun, edm::EventSetup const& iSetu
 		  pdf_id_pdf_ref = std::atoi(match[1].str().c_str());
 		}
 		weight_lines_counter += 1;
+		std::cout << weight_lines_counter << " " << pdf_id_qcd_scale_ref << " " << pdf_id_pdf_ref << std::endl;
 	  }
 	  // no other checks, should exit
-	  if (weight_lines_counter >= _MC_pdf_first_idx) {
+	  if (weight_lines_counter > _MC_pdf_first_idx) {
 		break;
 	  }
 	}
   }
 
   if (pdf_id_qcd_scale_ref != pdf_id_pdf_ref) {
-	throw cms::Exception("InvalidOption") << "PDF ID of QCD scale reference weight does not match PDF ID of PDF reference weight";
+	throw cms::Exception("InvalidOption")
+	  << "PDF ID of QCD scale reference ("
+	  << pdf_id_qcd_scale_ref
+	  << ") weight does not match PDF ID of PDF reference ("
+	  << pdf_id_pdf_ref
+	  << ") weight";
   }
 }
 
