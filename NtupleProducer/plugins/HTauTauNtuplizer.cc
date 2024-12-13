@@ -2680,65 +2680,9 @@ int HTauTauNtuplizer::FillJet(const edm::View<pat::Jet> *jets, const edm::Event&
 
     // JetID
     // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL
-    // Same recommendations for 2016 pre- and post- VFP
     int jetid=0;
-    bool tightJetID = false;
-    bool tightLepVetoJetID = false;
-    //2016 data
-    if (theYear == 2016)
-    {
-      if (absjeta <= 2.4)
-      {
-        tightJetID        = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && CHF>0   && CHM>0 );
-        tightLepVetoJetID = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && MUF<0.8 && CHF>0 && CHM>0 && CEMF<0.80 );
-      }
-
-      else if (absjeta > 2.4 && absjeta <= 2.7)
-      {
-        tightJetID        = ( NHF<0.90 && NEMF<0.99 );
-      }
-
-      else if (absjeta > 2.7 && absjeta <= 3.0)
-      {
-        tightJetID        = ( NHF<0.90 && NEMF>0 && NEMF<0.99 && NumNeutralParticles>1 );
-      }
-
-      else
-      {
-        tightJetID        = ( NHF>0.2 && NEMF<0.9 && NumNeutralParticles>10 );
-      }
-
-      if (tightJetID) ++jetid;
-      if (tightLepVetoJetID) ++jetid;
-    }
-    // 2017 and 2018 data
-    else if (theYear == 2017 || theYear == 2018)
-    {
-      if (absjeta <= 2.6)
-      {
-        tightJetID        = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && CHF>0   && CHM>0 );
-        tightLepVetoJetID = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && MUF<0.8 && CHF>0 && CHM>0 && CEMF<0.80 );
-      }
-
-      else if (absjeta > 2.6 && absjeta <= 2.7)
-      {
-        tightJetID        = ( NHF<0.90 && NEMF<0.99 && CHM>0 );
-        tightLepVetoJetID = ( NHF<0.90 && NEMF<0.99 && CHM>0 && MUF<0.8 && CEMF<0.80 );
-      }
-
-      else if (absjeta > 2.7 && absjeta <= 3.0)
-      {
-        tightJetID        = ( NEMF>0.01 && NEMF<0.99 && NumNeutralParticles>1 );
-      }
-
-      else
-      {
-        tightJetID        = ( NHF>0.2 && NEMF<0.9 && NumNeutralParticles>10 );
-      }
-      if (tightJetID) ++jetid;
-      if (tightLepVetoJetID) ++jetid;
-    }
-
+    if (ijet->userInt("tightId") == 1) ++jetid;
+    if (ijet->userInt("tightIdLepVeto") == 1) ++jetid;
     _jetID.push_back(jetid);
     float jecFactor = ijet->jecFactor("Uncorrected") ;
     _jets_area.push_back (ijet->jetArea());
@@ -2899,12 +2843,12 @@ int HTauTauNtuplizer::FillJet(const edm::View<pat::Jet> *jets, const edm::Event&
 
 void HTauTauNtuplizer::FillFatJet(const edm::View<pat::Jet>* fatjets, const edm::Event&)
 {
-    for(edm::View<pat::Jet>::const_iterator ijet = fatjets->begin(); ijet!=fatjets->end();++ijet)
+    for(edm::View<pat::Jet>::const_iterator fatjet = fatjets->begin(); fatjet!=fatjets->end();++fatjet)
     {
-      _ak8jets_px.push_back( (float) ijet->px());
-      _ak8jets_py.push_back( (float) ijet->py());
-      _ak8jets_pz.push_back( (float) ijet->pz());
-      _ak8jets_e.push_back( (float) ijet->energy());    
+      _ak8jets_px.push_back( (float) fatjet->px());
+      _ak8jets_py.push_back( (float) fatjet->py());
+      _ak8jets_pz.push_back( (float) fatjet->pz());
+      _ak8jets_e.push_back( (float) fatjet->energy());
       //_ak8jets_SoftDropMass.push_back (ijet->hasUserFloat("ak8PFJetsCHSSoftDropMass") ? ijet->userFloat("ak8PFJetsCHSSoftDropMass") : -999 );
       //_ak8jets_PrunedMass.push_back   (ijet->hasUserFloat("ak8PFJetsCHSPrunedMass")   ? ijet->userFloat("ak8PFJetsCHSPrunedMass")   : -999 );
       //_ak8jets_TrimmedMass.push_back  (ijet->hasUserFloat("ak8PFJetsCHSTrimmedMass")  ? ijet->userFloat("ak8PFJetsCHSTrimmedMass")  : -999 );
@@ -2912,43 +2856,43 @@ void HTauTauNtuplizer::FillFatJet(const edm::View<pat::Jet>* fatjets, const edm:
       //_ak8jets_tau1.push_back         (ijet->hasUserFloat("NjettinessAK8:tau1")       ? ijet->userFloat("NjettinessAK8:tau1")       : -999 );
       //_ak8jets_tau2.push_back         (ijet->hasUserFloat("NjettinessAK8:tau2")       ? ijet->userFloat("NjettinessAK8:tau2")       : -999 );
       //_ak8jets_tau3.push_back         (ijet->hasUserFloat("NjettinessAK8:tau3")       ? ijet->userFloat("NjettinessAK8:tau3")       : -999 );
-      _ak8jets_SoftDropMass.push_back (ijet->hasUserFloat("ak8PFJetsPuppiSoftDropMass") ? ijet->userFloat("ak8PFJetsPuppiSoftDropMass") : -999 );
-      _ak8jets_PrunedMass.push_back   (ijet->hasUserFloat("ak8PFJetsCHSValueMap:ak8PFJetsCHSPrunedMass") ? ijet->userFloat("ak8PFJetsCHSValueMap:ak8PFJetsCHSPrunedMass")   : -999 );
-      _ak8jets_TrimmedMass.push_back  (ijet->hasUserFloat("ak8PFJetsPuppiTrimmedMass")  ? ijet->userFloat("ak8PFJetsPuppiTrimmedMass")  : -999 );  // not existing anymore
-      _ak8jets_FilteredMass.push_back (ijet->hasUserFloat("ak8PFJetsPuppiFilteredMass") ? ijet->userFloat("ak8PFJetsPuppiFilteredMass") : -999 );  // not existing anymore
-      _ak8jets_tau1.push_back         (ijet->hasUserFloat("NjettinessAK8Puppi:tau1")    ? ijet->userFloat("NjettinessAK8Puppi:tau1")    : -999 );
-      _ak8jets_tau2.push_back         (ijet->hasUserFloat("NjettinessAK8Puppi:tau2")    ? ijet->userFloat("NjettinessAK8Puppi:tau2")    : -999 );
-      _ak8jets_tau3.push_back         (ijet->hasUserFloat("NjettinessAK8Puppi:tau3")    ? ijet->userFloat("NjettinessAK8Puppi:tau3")    : -999 );
-      _ak8jets_tau4.push_back         (ijet->hasUserFloat("NjettinessAK8Puppi:tau4")    ? ijet->userFloat("NjettinessAK8Puppi:tau4")    : -999 );
-      _ak8jets_CSV.push_back(ijet->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
-      _ak8jets_deepCSV_probb.push_back(ijet->bDiscriminator("pfDeepCSVJetTags:probb"));
-      _ak8jets_deepCSV_probbb.push_back(ijet->bDiscriminator("pfDeepCSVJetTags:probbb"));
-      _ak8jets_deepFlavor_probb.push_back(ijet->bDiscriminator("pfDeepFlavourJetTags:probb"));  // not existing anymore
-      _ak8jets_deepFlavor_probbb.push_back(ijet->bDiscriminator("pfDeepFlavourJetTags:probbb"));  // not existing anymore
-      _ak8jets_deepFlavor_problepb.push_back(ijet->bDiscriminator("pfDeepFlavourJetTags:problepb"));  // not existing anymore
-      _ak8jets_massIndependentDeepDoubleBvLJetTags_probHbb.push_back(ijet->bDiscriminator("pfMassIndependentDeepDoubleBvLJetTags:probHbb"));
-      _ak8jets_deepDoubleBvLJetTags_probHbb.push_back(ijet->bDiscriminator("pfDeepDoubleBvLJetTags:probHbb"));
-      _ak8jets_deepBoostedJetTags_probHbb.push_back(ijet->bDiscriminator("pfDeepBoostedJetTags:probHbb"));
-      _ak8jets_particleNetJetTags_probHbb.push_back(ijet->bDiscriminator("pfParticleNetJetTags:probHbb"));
-      _ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD.push_back(ijet->bDiscriminator("pfParticleNetDiscriminatorsJetTags:HbbvsQCD"));
+      _ak8jets_SoftDropMass.push_back (fatjet->hasUserFloat("ak8PFJetsPuppiSoftDropMass") ? fatjet->userFloat("ak8PFJetsPuppiSoftDropMass") : -999 );
+      _ak8jets_PrunedMass.push_back   (fatjet->hasUserFloat("ak8PFJetsCHSValueMap:ak8PFJetsCHSPrunedMass") ? fatjet->userFloat("ak8PFJetsCHSValueMap:ak8PFJetsCHSPrunedMass")   : -999 );
+      _ak8jets_TrimmedMass.push_back  (fatjet->hasUserFloat("ak8PFJetsPuppiTrimmedMass")  ? fatjet->userFloat("ak8PFJetsPuppiTrimmedMass")  : -999 );  // not existing anymore
+      _ak8jets_FilteredMass.push_back (fatjet->hasUserFloat("ak8PFJetsPuppiFilteredMass") ? fatjet->userFloat("ak8PFJetsPuppiFilteredMass") : -999 );  // not existing anymore
+      _ak8jets_tau1.push_back         (fatjet->hasUserFloat("NjettinessAK8Puppi:tau1")    ? fatjet->userFloat("NjettinessAK8Puppi:tau1")    : -999 );
+      _ak8jets_tau2.push_back         (fatjet->hasUserFloat("NjettinessAK8Puppi:tau2")    ? fatjet->userFloat("NjettinessAK8Puppi:tau2")    : -999 );
+      _ak8jets_tau3.push_back         (fatjet->hasUserFloat("NjettinessAK8Puppi:tau3")    ? fatjet->userFloat("NjettinessAK8Puppi:tau3")    : -999 );
+      _ak8jets_tau4.push_back         (fatjet->hasUserFloat("NjettinessAK8Puppi:tau4")    ? fatjet->userFloat("NjettinessAK8Puppi:tau4")    : -999 );
+      _ak8jets_CSV.push_back(fatjet->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
+      _ak8jets_deepCSV_probb.push_back(fatjet->bDiscriminator("pfDeepCSVJetTags:probb"));
+      _ak8jets_deepCSV_probbb.push_back(fatjet->bDiscriminator("pfDeepCSVJetTags:probbb"));
+      _ak8jets_deepFlavor_probb.push_back(fatjet->bDiscriminator("pfDeepFlavourJetTags:probb"));  // not existing anymore
+      _ak8jets_deepFlavor_probbb.push_back(fatjet->bDiscriminator("pfDeepFlavourJetTags:probbb"));  // not existing anymore
+      _ak8jets_deepFlavor_problepb.push_back(fatjet->bDiscriminator("pfDeepFlavourJetTags:problepb"));  // not existing anymore
+      _ak8jets_massIndependentDeepDoubleBvLJetTags_probHbb.push_back(fatjet->bDiscriminator("pfMassIndependentDeepDoubleBvLJetTags:probHbb"));
+      _ak8jets_deepDoubleBvLJetTags_probHbb.push_back(fatjet->bDiscriminator("pfDeepDoubleBvLJetTags:probHbb"));
+      _ak8jets_deepBoostedJetTags_probHbb.push_back(fatjet->bDiscriminator("pfDeepBoostedJetTags:probHbb"));
+      _ak8jets_particleNetJetTags_probHbb.push_back(fatjet->bDiscriminator("pfParticleNetJetTags:probHbb"));
+      _ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD.push_back(fatjet->bDiscriminator("pfParticleNetDiscriminatorsJetTags:HbbvsQCD"));
 
-      _ak8jets_particleNetMDJetTags_probXbb.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probXbb"));
-      _ak8jets_particleNetMDJetTags_probXcc.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probXcc"));
-      _ak8jets_particleNetMDJetTags_probXqq.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probXqq"));
-      _ak8jets_particleNetMDJetTags_probQCD.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDbb") +
-						      ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDb")  +
-						      ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDcc") +
-						      ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDc") +
-						      ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDothers"));
-      _ak8jets_particleNetMDJetTags_mass.push_back(ijet->bDiscriminator("pfParticleNetMassRegressionJetTags:mass"));
+      _ak8jets_particleNetMDJetTags_probXbb.push_back(fatjet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probXbb"));
+      _ak8jets_particleNetMDJetTags_probXcc.push_back(fatjet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probXcc"));
+      _ak8jets_particleNetMDJetTags_probXqq.push_back(fatjet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probXqq"));
+      _ak8jets_particleNetMDJetTags_probQCD.push_back(fatjet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDbb") +
+						      fatjet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDb")  +
+						      fatjet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDcc") +
+						      fatjet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDc") +
+						      fatjet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDothers"));
+      _ak8jets_particleNetMDJetTags_mass.push_back(fatjet->bDiscriminator("pfParticleNetMassRegressionJetTags:mass"));
 
       // store subjets for soft drop
       int nsubj = 0;
       //if (ijet->hasSubjets("SoftDrop"))
-      if (ijet->hasSubjets("SoftDropPuppi"))
+      if (fatjet->hasSubjets("SoftDropPuppi"))
       {
         //pat::JetPtrCollection const & subj = ijet->subjets("SoftDrop");
-        pat::JetPtrCollection const & subj = ijet->subjets("SoftDropPuppi");
+        pat::JetPtrCollection const & subj = fatjet->subjets("SoftDropPuppi");
         // cout << "============= IJET " << ijet - fatjets->begin() << " ============= " << endl;
         for (auto isubj = subj.begin(); isubj!=subj.end(); isubj++)
         {
@@ -2963,94 +2907,19 @@ void HTauTauNtuplizer::FillFatJet(const edm::View<pat::Jet>* fatjets, const edm:
           _subjets_deepFlavor_probb.push_back((*isubj)->bDiscriminator("pfDeepFlavourJetTags:probb"));  // not existing anymore
           _subjets_deepFlavor_probbb.push_back((*isubj)->bDiscriminator("pfDeepFlavourJetTags:probbb"));  // not existing anymore
           _subjets_deepFlavor_problepb.push_back((*isubj)->bDiscriminator("pfDeepFlavourJetTags:problepb"));  // not existing anymore
-          _subjets_ak8MotherIdx.push_back(ijet - fatjets->begin()); // idx of fatjet in fatjet vector
+          _subjets_ak8MotherIdx.push_back(fatjet - fatjets->begin()); // idx of fatjet in fatjet vector
           // cout << " * " << (*isubj)->pt() << " " << isubj - subj.begin() << endl;
         }
       }
       _ak8jets_nsubjets.push_back(nsubj);
 
-    // PF jet ID for AK8 Puppi (same as AK4 Puppi)
-    float NHF                 = ijet->neutralHadronEnergyFraction();
-    float NEMF                = ijet->neutralEmEnergyFraction();
-    float CHF                 = ijet->chargedHadronEnergyFraction();
-    float MUF                 = ijet->muonEnergyFraction();
-    float CEMF                = ijet->chargedEmEnergyFraction();
-    int   NumNeutralParticles = ijet->neutralMultiplicity();
-    int   chargedMult         = ijet->chargedMultiplicity();
-    int   NumConst            = ijet->chargedMultiplicity()+NumNeutralParticles;
-    float CHM                 = ijet->chargedMultiplicity();
-    float absjeta             = fabs(ijet->eta());
-
-    _ak8jets_chEmEF.push_back(CEMF);
-    _ak8jets_chHEF.push_back(CHF);
-    _ak8jets_nEmEF.push_back(NEMF);
-    _ak8jets_nHEF.push_back(NHF);
-    _ak8jets_chMult.push_back(chargedMult);
-    _ak8jets_neMult.push_back(NumNeutralParticles);
-    _ak8jets_MUF.push_back(MUF);
-
     // JetID for AK8 Puppi (same as AK4 Puppi)
     // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL
-    // Same recommendations for 2016 pre- and post- VFP
-    int jetid=0;
-    bool tightJetID = false;
-    bool tightLepVetoJetID = false;
-    //2016 data
-    if (theYear == 2016)
-    {
-      if (absjeta <= 2.4)
-      {
-        tightJetID        = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && CHF>0   && CHM>0 );
-        tightLepVetoJetID = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && MUF<0.8 && CHF>0 && CHM>0 && CEMF<0.80 );
-      }
 
-      else if (absjeta > 2.4 && absjeta <= 2.7)
-      {
-        tightJetID        = ( NHF<0.98 && NEMF<0.99 );
-      }
-
-      else if (absjeta > 2.7 && absjeta <= 3.0)
-      {
-        tightJetID        = ( NumNeutralParticles>=1 );
-      }
-
-      else
-      {
-        tightJetID        = ( NEMF<0.9 && NumNeutralParticles>2 );
-      }
-
-      if (tightJetID) ++jetid;
-      if (tightLepVetoJetID) ++jetid;
-    }
-    // 2017 and 2018 data
-    else if (theYear == 2017 || theYear == 2018)
-    {
-      if (absjeta <= 2.6)
-      {
-        tightJetID        = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && CHF>0   && CHM>0 );
-        tightLepVetoJetID = ( NHF<0.90 && NEMF<0.90 && NumConst>1 && MUF<0.8 && CHF>0 && CHM>0 && CEMF<0.80 );
-      }
-
-      else if (absjeta > 2.6 && absjeta <= 2.7)
-      {
-        tightJetID        = ( NHF<0.90 && NEMF<0.99 );
-        tightLepVetoJetID = ( NHF<0.90 && NEMF<0.99 && MUF<0.8 && CEMF<0.80 );
-      }
-
-      else if (absjeta > 2.7 && absjeta <= 3.0)
-      {
-        tightJetID        = ( NHF < 0.9999 );
-      }
-
-      else
-      {
-        tightJetID        = ( NEMF<0.9 && NumNeutralParticles>2 );
-      }
-      if (tightJetID) ++jetid;
-      if (tightLepVetoJetID) ++jetid;
-    }
-
-    _jetID_AK8Puppi.push_back(jetid);
+    int fatjetid=0;
+    if (fatjet->userInt("tightId") == 1) ++fatjetid;
+    if (fatjet->userInt("tightIdLepVeto") == 1) ++fatjetid;
+    _jetID_AK8Puppi.push_back(fatjetid);
     }
 }
 
