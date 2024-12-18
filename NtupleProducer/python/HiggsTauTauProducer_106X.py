@@ -448,38 +448,10 @@ process.bregJets = cms.EDProducer("bRegressionProducer",
                                   y_std = cms.double(Y_STD),
 )
 
-### Add PF JetIDs to AK4 CHS jets
-process.tightJetId = cms.EDProducer("PatJetIDValueMapProducer",
-    filterParams=cms.PSet(
-        version = cms.string('RUN2UL16CHS' if YEAR==2016 else 'RUN2ULCHS'),
-        quality = cms.string('TIGHT'),
-    ),
-    src = cms.InputTag("bregJets"),
-)
-
-process.tightJetIdLepVeto = cms.EDProducer("PatJetIDValueMapProducer",
-    filterParams=cms.PSet(
-        version = cms.string('RUN2UL16CHS' if YEAR==2016 else 'RUN2ULCHS'),
-        quality = cms.string('TIGHTLEPVETO'),
-    ),
-    src = cms.InputTag("bregJets"),
-)
-
-process.updatedJetsWithIDs = cms.EDProducer("PATJetUserDataEmbedder",
-    src = cms.InputTag("bregJets"),
-    userFloats = cms.PSet(),
-    userInts = cms.PSet(
-        tightId = cms.InputTag("tightJetId"),
-        tightIdLepVeto = cms.InputTag("tightJetIdLepVeto"),
-    ),
-)
-
-process.jetIDSequence = cms.Sequence(process.tightJetId + process.tightJetIdLepVeto + process.updatedJetsWithIDs)
-
 # Update jet collection
 updateJetCollection(
    process,
-   jetSource = cms.InputTag('updatedJetsWithIDs'),
+   jetSource = cms.InputTag('bregJets'),
    pvSource = cms.InputTag('offlineSlimmedPrimaryVertices'),
    svSource = cms.InputTag('slimmedSecondaryVertices'),
    jetCorrections = ('AK4PFchs', cms.vstring(jecLevels), 'None'),
@@ -877,42 +849,10 @@ process.jetsAK8PNETUpdated = updatedPatJets.clone(
 )
 process.jetsAK8PNETUpdated.discriminatorSources.append("pfParticleNetMassRegressionJetTags:mass")
 
-### Add PF JetIDs to AK8 Puppi jets
-process.tightJetIdAK8 = cms.EDProducer("PatJetIDValueMapProducer",
-    filterParams=cms.PSet(
-        version = cms.string('RUN2UL16PUPPI' if YEAR==2016 else 'RUN2ULPUPPI'),
-        quality = cms.string('TIGHT'),
-    ),
-    src = cms.InputTag("jetsAK8PNETUpdated"),
-)
-
-process.tightJetIdLepVetoAK8 = cms.EDProducer("PatJetIDValueMapProducer",
-    filterParams=cms.PSet(
-        version = cms.string('RUN2UL16PUPPI' if YEAR==2016 else 'RUN2ULPUPPI'),
-        quality = cms.string('TIGHTLEPVETO'),
-    ),
-    src = cms.InputTag("jetsAK8PNETUpdated"),
-)
-
-process.updatedJetsAK8WithIDs = cms.EDProducer("PATJetUserDataEmbedder",
-    src = cms.InputTag("jetsAK8PNETUpdated"),
-    userFloats = cms.PSet(),
-    userInts = cms.PSet(
-        tightId = cms.InputTag("tightJetIdAK8"),
-        tightIdLepVeto = cms.InputTag("tightJetIdLepVetoAK8"),
-    ),
-)
-
-process.jetIDSequenceAK8Puppi = cms.Sequence(
-    process.tightJetIdAK8 *
-    process.tightJetIdLepVetoAK8 *
-    process.updatedJetsAK8WithIDs
-)
-
 # Update JEC for AK8 Puppi jet collection
 updateJetCollection(
     process,
-    jetSource = cms.InputTag('updatedJetsAK8WithIDs'),
+    jetSource = cms.InputTag('jetsAK8PNETUpdated'),
     pvSource = cms.InputTag('offlineSlimmedPrimaryVertices'),
     svSource = cms.InputTag('slimmedSecondaryVertices'),
     jetCorrections = ('AK8PFPuppi', cms.vstring(jecLevels), 'None'),
@@ -956,13 +896,11 @@ process.Candidates = cms.Sequence(
     process.softLeptons        + 
     process.barellCand         +
     process.bregJets           + 
-    process.jetIDSequence      +
     process.jecSequence        + 
     process.jetSequence        +
     process.pfParticleNetAK8JetTagInfos +
     process.pfParticleNetMassRegressionJetTags +
     process.jetsAK8PNETUpdated +
-    process.jetIDSequenceAK8Puppi +
     process.jecSequenceAK8Puppi+
     process.METSequence        +
     process.geninfo            +

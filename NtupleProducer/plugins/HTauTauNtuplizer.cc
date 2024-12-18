@@ -2657,33 +2657,88 @@ int HTauTauNtuplizer::FillJet(const edm::View<pat::Jet> *jets, const edm::Event&
     _bdiscr21.push_back(ijet->bDiscriminator("pfParticleNetAK4JetTags:probuds"));
     _bdiscr22.push_back(ijet->bDiscriminator("pfParticleNetAK4JetTags:probg"));
 
-    //PF jet ID
-    float NHF                 = ijet->neutralHadronEnergyFraction();
-    float NEMF                = ijet->neutralEmEnergyFraction();
-    float CHF                 = ijet->chargedHadronEnergyFraction();
-    float MUF                 = ijet->muonEnergyFraction();
-    float CEMF                = ijet->chargedEmEnergyFraction();
-    int   NumNeutralParticles = ijet->neutralMultiplicity();
-    int   chargedMult         = ijet->chargedMultiplicity();
-    int   NumConst            = ijet->chargedMultiplicity()+NumNeutralParticles;
-    float CHM                 = ijet->chargedMultiplicity();
-    float absjeta             = fabs(ijet->eta());
-
-    _jets_chEmEF .push_back(CEMF);  
-    _jets_chHEF  .push_back(CHF); 
-    _jets_nEmEF  .push_back(NEMF);
-    _jets_nHEF   .push_back(NHF);
-    _jets_chMult .push_back(chargedMult);  
-    _jets_neMult .push_back(NumNeutralParticles);  
-    _jets_MUF    .push_back(MUF);
-
-
     // JetID
     // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL
+    float NHF = ijet->neutralHadronEnergyFraction();
+    float NEMF = ijet->neutralEmEnergyFraction();
+    float CHF = ijet->chargedHadronEnergyFraction();
+    float MUF = ijet->muonEnergyFraction();
+    float CEMF = ijet->chargedEmEnergyFraction();
+    int neutralMult = ijet->neutralMultiplicity();
+    int chargedMult = ijet->chargedMultiplicity();
+    int NumConst = chargedMult+neutralMult;
+    float absjeta = fabs(ijet->eta());
+
+    _jets_chEmEF.push_back(CEMF);
+    _jets_chHEF.push_back(CHF);
+    _jets_nEmEF.push_back(NEMF);
+    _jets_nHEF.push_back(NHF);
+    _jets_chMult.push_back(chargedMult);
+    _jets_neMult.push_back(neutralMult);
+    _jets_MUF.push_back(MUF);
+
     int jetid=0;
-    if (ijet->userInt("tightId") == 1) ++jetid;
-    if (ijet->userInt("tightIdLepVeto") == 1) ++jetid;
+    bool tightJetID = false;
+    bool tightLepVetoJetID = false;
+
+    //2016
+    if (theYear == 2016)
+    {
+      if (absjeta <= 2.4)
+      {
+        tightJetID = NHF<0.9 && NEMF<0.9 && NumConst>1 && CHF>0 && chargedMult>0;
+        tightLepVetoJetID = tightLepVetoJetID && MUF<0.8 && CEMF<0.8;
+      }
+
+      else if (absjeta > 2.4 && absjeta <= 2.7)
+      {
+        tightJetID = NHF<0.9 && NEMF<0.99;
+        tightLepVetoJetID = tightJetID;
+      }
+
+      else if (absjeta > 2.7 && absjeta <= 3.)
+      {
+        tightJetID        = NHF<0.9 && NEMF>0 && NEMF<0.99 && neutralMult>1;
+        tightLepVetoJetID = tightJetID;
+      }
+
+      else if (absjeta > 3. && absjeta <= 5.)
+      {
+        tightJetID        = NHF>0.2 && NEMF<0.9 && neutralMult>10;
+        tightLepVetoJetID = tightJetID;
+      }
+    }
+    // 2017 and 2018
+    else if (theYear == 2017 || theYear == 2018)
+    {
+      if (absjeta <= 2.6)
+      {
+        tightJetID        = NHF<0.9 && NEMF<0.9 && NumConst>1 && CHF>0 && chargedMult>0;
+        tightLepVetoJetID = tightLepVetoJetID && MUF<0.8 && CEMF<0.8;
+      }
+
+      else if (absjeta > 2.6 && absjeta <= 2.7)
+      {
+        tightJetID        = NHF<0.9 && NEMF<0.99 && chargedMult>0;
+        tightLepVetoJetID = tightLepVetoJetID && MUF<0.8 && CEMF<0.8;
+      }
+
+      else if (absjeta > 2.7 && absjeta <= 3.)
+      {
+        tightJetID        = NEMF>0.01 && NEMF<0.99 && neutralMult>1;
+        tightLepVetoJetID = tightJetID;
+      }
+
+      else if (absjeta > 3. && absjeta <= 5.)
+      {
+        tightJetID        = NHF>0.2 && NEMF<0.9 && neutralMult>10;
+        tightLepVetoJetID = tightJetID;
+      }
+    }
+    if (tightJetID) ++jetid;
+    if (tightLepVetoJetID) ++jetid;
     _jetID.push_back(jetid);
+
     float jecFactor = ijet->jecFactor("Uncorrected") ;
     _jets_area.push_back (ijet->jetArea());
     _jetrawf.push_back(jecFactor);
@@ -2917,8 +2972,87 @@ void HTauTauNtuplizer::FillFatJet(const edm::View<pat::Jet>* fatjets, const edm:
     // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL
 
     int fatjetid=0;
-    if (fatjet->userInt("tightId") == 1) ++fatjetid;
-    if (fatjet->userInt("tightIdLepVeto") == 1) ++fatjetid;
+    bool tightJetID_AK8Puppi = false;
+    bool tightLepVetoJetID_AK8Puppi = false;
+
+    // only above a certain pT threshold the variables relevant to the IDs are stored
+    // we only care above 250 GeV anyway
+    if(fatjet->pt() > 250){
+      float NHF_AK8Puppi = fatjet->neutralHadronEnergyFraction();
+      float NEMF_AK8Puppi = fatjet->neutralEmEnergyFraction();
+      float CHF_AK8Puppi = fatjet->chargedHadronEnergyFraction();
+      float MUF_AK8Puppi = fatjet->muonEnergyFraction();
+      float CEMF_AK8Puppi = fatjet->chargedEmEnergyFraction();
+      int neutralMult_AK8Puppi = fatjet->neutralMultiplicity();
+      int chargedMult_AK8Puppi = fatjet->chargedMultiplicity();
+      int NumConst_AK8Puppi = chargedMult_AK8Puppi + neutralMult_AK8Puppi;
+      float absjeta_AK8Puppi = fabs(fatjet->eta());
+
+      _ak8jets_chEmEF.push_back(CEMF_AK8Puppi);
+      _ak8jets_chHEF.push_back(CHF_AK8Puppi);
+      _ak8jets_nEmEF.push_back(NEMF_AK8Puppi);
+      _ak8jets_nHEF.push_back(NHF_AK8Puppi);
+      _ak8jets_chMult.push_back(chargedMult_AK8Puppi);
+      _ak8jets_neMult.push_back(neutralMult_AK8Puppi);
+      _ak8jets_MUF.push_back(MUF_AK8Puppi);
+
+      //2016
+      if (theYear == 2016)
+      {
+        if (absjeta_AK8Puppi <= 2.4)
+        {
+          tightJetID_AK8Puppi = NHF_AK8Puppi<0.9 && NEMF_AK8Puppi<0.9 && NumConst_AK8Puppi>1 && CHF_AK8Puppi>0 && chargedMult_AK8Puppi>0;
+          tightLepVetoJetID_AK8Puppi = tightJetID_AK8Puppi && MUF_AK8Puppi<0.8 && CEMF_AK8Puppi<0.8;
+        }
+
+        else if (absjeta_AK8Puppi > 2.4 && absjeta_AK8Puppi <= 2.7)
+        {
+          tightJetID_AK8Puppi = NHF_AK8Puppi<0.98 && NEMF_AK8Puppi<0.99;
+          tightLepVetoJetID_AK8Puppi = tightJetID_AK8Puppi;
+        }
+
+        else if (absjeta_AK8Puppi > 2.7 && absjeta_AK8Puppi <= 3.)
+        {
+          tightJetID_AK8Puppi = neutralMult_AK8Puppi>=1;
+          tightLepVetoJetID_AK8Puppi = tightJetID_AK8Puppi;
+        }
+
+        else if (absjeta_AK8Puppi > 3. && absjeta_AK8Puppi <= 5.)
+        {
+          tightJetID_AK8Puppi = NEMF_AK8Puppi<0.9 && neutralMult_AK8Puppi>2;
+          tightLepVetoJetID_AK8Puppi = tightJetID_AK8Puppi;
+        }
+      }
+      // 2017 and 2018
+      else if (theYear == 2017 || theYear == 2018)
+      {
+        if (absjeta_AK8Puppi <= 2.6)
+        {
+          tightJetID_AK8Puppi = NHF_AK8Puppi<0.9 && NEMF_AK8Puppi<0.9 && NumConst_AK8Puppi>1 && CHF_AK8Puppi>0   && chargedMult_AK8Puppi>0;
+          tightLepVetoJetID_AK8Puppi = tightJetID_AK8Puppi && MUF_AK8Puppi<0.8 && CEMF_AK8Puppi<0.8;
+        }
+
+        else if (absjeta_AK8Puppi > 2.6 && absjeta_AK8Puppi <= 2.7)
+        {
+          tightJetID_AK8Puppi = NHF_AK8Puppi<0.9 && NEMF_AK8Puppi<0.99;
+          tightLepVetoJetID_AK8Puppi = tightJetID_AK8Puppi && MUF_AK8Puppi<0.8 && CEMF_AK8Puppi<0.8;
+        }
+
+        else if (absjeta_AK8Puppi > 2.7 && absjeta_AK8Puppi <= 3.)
+        {
+          tightJetID_AK8Puppi = NHF_AK8Puppi < 0.9999;
+          tightLepVetoJetID_AK8Puppi = tightJetID_AK8Puppi;
+        }
+
+        else if (absjeta_AK8Puppi > 3. && absjeta_AK8Puppi <= 5.)
+        {
+          tightJetID_AK8Puppi = NEMF_AK8Puppi<0.9 && neutralMult_AK8Puppi>2;
+          tightLepVetoJetID_AK8Puppi = tightJetID_AK8Puppi;
+        }
+      }
+    }
+    if (tightJetID_AK8Puppi) ++fatjetid;
+    if (tightLepVetoJetID_AK8Puppi) ++fatjetid;
     _jetID_AK8Puppi.push_back(fatjetid);
     }
 }
