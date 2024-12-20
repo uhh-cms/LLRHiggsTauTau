@@ -816,6 +816,7 @@ else:
     process.HTauTauTree.candCollection = cms.InputTag("SVllCand")
     process.SVFit = cms.Sequence (process.SVllCand)
 
+
 ### ParticleNet AK8 mass regression
 from RecoBTag.FeatureTools.pfDeepBoostedJetTagInfos_cfi import pfDeepBoostedJetTagInfos
 process.pfParticleNetAK8JetTagInfos = pfDeepBoostedJetTagInfos.clone(
@@ -848,7 +849,23 @@ process.jetsAK8PNETUpdated = updatedPatJets.clone(
 )
 process.jetsAK8PNETUpdated.discriminatorSources.append("pfParticleNetMassRegressionJetTags:mass")
 
-process.HTauTauTree.ak8jetCollection = cms.InputTag("jetsAK8PNETUpdated")
+# Update JEC for AK8 Puppi jet collection
+updateJetCollection(
+    process,
+    jetSource = cms.InputTag('jetsAK8PNETUpdated'),
+    pvSource = cms.InputTag('offlineSlimmedPrimaryVertices'),
+    svSource = cms.InputTag('slimmedSecondaryVertices'),
+    jetCorrections = ('AK8PFPuppi', cms.vstring(jecLevels), 'None'),
+    labelName = 'AK8PuppiJEC',
+    rParam=0.8,
+)
+
+process.jecSequenceAK8Puppi = cms.Sequence(
+    process.patJetCorrFactorsAK8PuppiJEC *
+    process.updatedPatJetsAK8PuppiJEC
+)
+
+process.HTauTauTree.ak8jetCollection = cms.InputTag("updatedPatJetsAK8PuppiJEC")
 
 #print particles gen level - DEBUG purposes
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
@@ -884,6 +901,7 @@ process.Candidates = cms.Sequence(
     process.pfParticleNetAK8JetTagInfos +
     process.pfParticleNetMassRegressionJetTags +
     process.jetsAK8PNETUpdated +
+    process.jecSequenceAK8Puppi+
     process.METSequence        +
     process.geninfo            +
     process.SVFit
