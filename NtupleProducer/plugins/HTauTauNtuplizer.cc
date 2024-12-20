@@ -2687,7 +2687,7 @@ int HTauTauNtuplizer::FillJet(const edm::View<pat::Jet> *jets, const edm::Event&
       if (absjeta <= 2.4)
       {
         tightJetID = NHF<0.9 && NEMF<0.9 && NumConst>1 && CHF>0 && chargedMult>0;
-        tightLepVetoJetID = tightLepVetoJetID && MUF<0.8 && CEMF<0.8;
+        tightLepVetoJetID = tightJetID && MUF<0.8 && CEMF<0.8;
       }
 
       else if (absjeta > 2.4 && absjeta <= 2.7)
@@ -2714,13 +2714,13 @@ int HTauTauNtuplizer::FillJet(const edm::View<pat::Jet> *jets, const edm::Event&
       if (absjeta <= 2.6)
       {
         tightJetID        = NHF<0.9 && NEMF<0.9 && NumConst>1 && CHF>0 && chargedMult>0;
-        tightLepVetoJetID = tightLepVetoJetID && MUF<0.8 && CEMF<0.8;
+        tightLepVetoJetID = tightJetID && MUF<0.8 && CEMF<0.8;
       }
 
       else if (absjeta > 2.6 && absjeta <= 2.7)
       {
         tightJetID        = NHF<0.9 && NEMF<0.99 && chargedMult>0;
-        tightLepVetoJetID = tightLepVetoJetID && MUF<0.8 && CEMF<0.8;
+        tightLepVetoJetID = tightJetID && MUF<0.8 && CEMF<0.8;
       }
 
       else if (absjeta > 2.7 && absjeta <= 3.)
