@@ -1,3 +1,4 @@
+
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("TEST")
@@ -23,7 +24,7 @@ try: SCHEME
 except:
     SCHEME = "None"
 print 'Uncertainty scheme:', SCHEME
-assert SCHEME in ("MadGraph45A", "MadGraph45B", "MadGraph9A", "MadGraph9B", "MadGraph9B_STlepton", "Powheg9")
+assert SCHEME in ("None", "MadGraph45A", "MadGraph45B", "MadGraph9A", "MadGraph9B", "MadGraph9B_STlepton", "Powheg9")
 try: doCPVariables
 except NameError:
     doCPVariables=True       
