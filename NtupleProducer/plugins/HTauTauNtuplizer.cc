@@ -3971,7 +3971,9 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
 	}
   else
 	{
-	  throw cms::Exception("InvalidOption") << "uncertainty scheme " << uncertScheme << " option is not valid";
+	  if (uncertScheme != "None") {
+		throw cms::Exception("InvalidOption") << "uncertainty scheme " << uncertScheme << " option is not valid";
+	  }
 	}
 
   // handle the factor of 2 error in the MINIAOD ST_s-channel_4f sample
