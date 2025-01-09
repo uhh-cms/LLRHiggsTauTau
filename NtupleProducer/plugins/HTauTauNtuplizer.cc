@@ -3984,6 +3984,10 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
 }
 
 void HTauTauNtuplizer::endRun(edm::Run const& iRun, edm::EventSetup const& iSetup) {
+  // LHERunInfoProduct not defined for data
+  // can also be useful for MC in the rare cases where no LHERunInfoProduct is available
+  if(uncertScheme == "None") return; 
+
   // checks if PDF ID of QCD scale reference matches PDF ID of PDF reference
   
   edm::Handle<LHERunInfoProduct> run;
@@ -3993,7 +3997,6 @@ void HTauTauNtuplizer::endRun(edm::Run const& iRun, edm::EventSetup const& iSetu
   int pdf_id_qcd_scale_ref = 1;
   int pdf_id_pdf_ref = 2; // ensure the two IDs are different in case the for-loop is ignored
   unsigned weight_lines_counter = 0;
-
   
   std::regex reg;
   if (uncertScheme.find("MadGraph") != std::string::npos) {
