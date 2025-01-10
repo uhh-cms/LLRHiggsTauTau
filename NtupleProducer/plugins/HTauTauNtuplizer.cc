@@ -3955,10 +3955,7 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
   {
     _MC_pdf_first_idx = 112;
   }
-  else if (uncertScheme != "None")
-  {
-    throw cms::Exception("InvalidOption") << "uncertainty scheme " << uncertScheme << " option is not valid";
-  }
+
 
   // QCD scale
   if (uncertScheme.find("qcd5") != std::string::npos)
