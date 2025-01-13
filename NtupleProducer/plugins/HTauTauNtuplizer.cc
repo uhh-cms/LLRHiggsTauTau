@@ -3936,6 +3936,18 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
     } 
   }
 
+  std::vector<std::string> allowedSchemes{"Powheg_pdf9_qcd1_alpha_s", "Powheg_pdf112_qcd1_alpha_s", "MadGraph_pdf9_qcd1", "MadGraph_pdf9_qcd1_alpha_s", "MadGraph_pdf45_qcd5", "MadGraph_pdf45_qcd37_alpha_s", "MadGraph_pdf47_qcd5", "MadGraph_pdf47_qcd5_alpha_s"};
+
+  // LHERunInfoProduct not defined for data
+  // can also be useful for MC in the rare cases where no LHERunInfoProduct is available
+  if(uncertScheme == "None"){
+    std::cout<<"Uncertainty scheme is \"None\". Skipping checks that require LHERunInforProduct"<<std::endl;
+    return;
+  }
+  else if (std::find(std::begin(allowedSchemes), std::end(allowedSchemes), uncertScheme) == std::end(allowedSchemes)){
+    throw cms::Exception("InvalidOption") << "Invalid uncertainty scheme: " << uncertScheme << std::endl;
+  }
+
   // PDF, alpha strong and QCD uncertainty schemes
   _MC_pdf_first_idx = 0;
   _MC_pdf_last_idx = _MC_pdf.size();
@@ -3994,15 +4006,12 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
     st_mult = 2.;
   }
 
-  // LHERunInfoProduct not defined for data
-  // can also be useful for MC in the rare cases where no LHERunInfoProduct is available
-  if(uncertScheme == "None") return;
-
   // checks if PDF ID of QCD scale reference matches PDF ID of PDF reference
   
   edm::Handle<LHERunInfoProduct> run;
-  iRun.getByLabel("externalLHEProducer", run);
+
   // throws a warning about reading a Run product before endRun was called, but does it anyway ¯\_(ツ)_/¯
+  iRun.getByLabel("externalLHEProducer", run);
 
   typedef std::vector<LHERunInfoProduct::Header>::const_iterator headers_const_iterator;
 
