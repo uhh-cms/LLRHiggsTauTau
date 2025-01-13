@@ -796,7 +796,7 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   double st_mult;
   unsigned _MC_pdf_first_idx;
   unsigned _MC_pdf_last_idx;
-  unsigned _MC_QCDscale_indices[7];
+  unsigned _MC_QCDscale_indices[7] = {};
 };
 
 const int HTauTauNtuplizer::ntauIds; // definition of static member
@@ -2128,9 +2128,7 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
 
     if (lheeventinfo.isValid()) {
       _nup=lheeventinfo->hepeup().NUP;
-
       auto lheweights = lheeventinfo->weights();
-
       for (unsigned pdf_idx = _MC_pdf_first_idx; pdf_idx <= _MC_pdf_first_idx+_MC_pdf_last_idx; ++pdf_idx) {
         if (pdf_idx != _MC_pdf_first_idx) {
           _MC_pdf[pdf_idx-_MC_pdf_first_idx] = st_mult * lheweights[pdf_idx].wgt;
@@ -2146,7 +2144,6 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
       _MC_QCDscale[4] = st_mult * lheweights[_MC_QCDscale_indices[4]].wgt;
       _MC_QCDscale[5] = st_mult * lheweights[_MC_QCDscale_indices[5]].wgt;
       _MC_QCDscale[6] = st_mult * lheweights[_MC_QCDscale_indices[6]].wgt;
-
       if (uncertScheme.find("alpha_s") != std::string::npos) {
         _MC_astrong[0] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+1].wgt;
         _MC_astrong[1] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+2].wgt;
