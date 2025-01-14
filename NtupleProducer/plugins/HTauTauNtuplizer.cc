@@ -796,6 +796,7 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   double st_mult;
   unsigned _MC_pdf_first_idx;
   unsigned _MC_pdf_last_idx;
+  unsigned _MC_QCDscale_indices[7] = {};
 };
 
 const int HTauTauNtuplizer::ntauIds; // definition of static member
@@ -2127,52 +2128,27 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
 
     if (lheeventinfo.isValid()) {
       _nup=lheeventinfo->hepeup().NUP;
-
-	  const auto lheweights = lheeventinfo->weights();
-		  
-	  for (unsigned pdf_idx = _MC_pdf_first_idx; pdf_idx <= _MC_pdf_first_idx+_MC_pdf_last_idx; ++pdf_idx) {
-		if (pdf_idx != _MC_pdf_first_idx) {
-		  _MC_pdf[pdf_idx-_MC_pdf_first_idx] = st_mult * lheweights[pdf_idx].wgt;
-		}
-		else {
-		  _MC_pdf[pdf_idx-_MC_pdf_first_idx] = lheweights[pdf_idx].wgt;
-		}
-	  }
-
-	  if (uncertScheme.find("MadGraph9B") == std::string::npos and
-		  uncertScheme.find("MadGraph45B") == std::string::npos) {
-		_MC_astrong[0] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+1].wgt;
-		_MC_astrong[1] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+2].wgt;
-	  }
-	  else { // no alpha strong uncertainty with matching PDF ID
-		_MC_astrong[0] = 0.;
-		_MC_astrong[1] = 0.;
-	  }
-	  
-	  // QCD scale
-	  if (uncertScheme.find("MadGraph45") != std::string::npos)
-		{
-		  _MC_QCDscale[0] = lheweights[0].wgt; // muF1p0_muR1p0
-		  _MC_QCDscale[1] = lheweights[5].wgt;
-		  _MC_QCDscale[2] = lheweights[10].wgt;
-		  _MC_QCDscale[3] = lheweights[15].wgt;
-		  _MC_QCDscale[4] = lheweights[20].wgt;
-		  _MC_QCDscale[5] = lheweights[30].wgt;
-		  _MC_QCDscale[6] = lheweights[40].wgt;
-		}
-	  else if (uncertScheme.find("MadGraph9") != std::string::npos or
-			   uncertScheme.find("Powheg9") != std::string::npos)
-		{
-		  _MC_QCDscale[0] = lheweights[0].wgt; // muF1p0_muR1p0
-		  _MC_QCDscale[1] = st_mult * lheweights[1].wgt;
-		  _MC_QCDscale[2] = st_mult * lheweights[2].wgt;
-		  _MC_QCDscale[3] = st_mult * lheweights[3].wgt;
-		  _MC_QCDscale[4] = st_mult * lheweights[4].wgt;
-		  _MC_QCDscale[5] = st_mult * lheweights[6].wgt;
-		  _MC_QCDscale[6] = st_mult * lheweights[8].wgt;
-		}
-	}
-
+      auto lheweights = lheeventinfo->weights();
+      for (unsigned pdf_idx = _MC_pdf_first_idx; pdf_idx <= _MC_pdf_first_idx+_MC_pdf_last_idx; ++pdf_idx) {
+        if (pdf_idx != _MC_pdf_first_idx) {
+          _MC_pdf[pdf_idx-_MC_pdf_first_idx] = st_mult * lheweights[pdf_idx].wgt;
+        }
+        else {
+          _MC_pdf[pdf_idx-_MC_pdf_first_idx] = lheweights[pdf_idx].wgt;
+        }
+      }
+      _MC_QCDscale[0] = lheweights[_MC_QCDscale_indices[0]].wgt; // muF1p0_muR1p0
+      _MC_QCDscale[1] = st_mult * lheweights[_MC_QCDscale_indices[1]].wgt;
+      _MC_QCDscale[2] = st_mult * lheweights[_MC_QCDscale_indices[2]].wgt;
+      _MC_QCDscale[3] = st_mult * lheweights[_MC_QCDscale_indices[3]].wgt;
+      _MC_QCDscale[4] = st_mult * lheweights[_MC_QCDscale_indices[4]].wgt;
+      _MC_QCDscale[5] = st_mult * lheweights[_MC_QCDscale_indices[5]].wgt;
+      _MC_QCDscale[6] = st_mult * lheweights[_MC_QCDscale_indices[6]].wgt;
+      if (uncertScheme.find("alpha_s") != std::string::npos) {
+        _MC_astrong[0] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+1].wgt;
+        _MC_astrong[1] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+2].wgt;
+      }
+    }
   }
 
   const edm::View<pat::CompositeCandidate>* cands = candHandle.product();
@@ -3930,7 +3906,7 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
 
 
   Bool_t changedConfig = false;
- 
+
   //if(!hltConfig_.init(iRun, iSetup, triggerResultsLabel.process(), changedConfig)){
   if(!hltConfig_.init(iRun, iSetup, processName.process(), changedConfig)){
     edm::LogError("HLTMatchingFilter") << "Initialization of HLTConfigProvider failed!!"; 
@@ -3957,41 +3933,83 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
     } 
   }
 
+  std::vector<std::string> allowedSchemes{"Powheg_pdf9_qcd1_alpha_s", "Powheg_pdf112_qcd1_alpha_s", "MadGraph_pdf9_qcd1", "MadGraph_pdf9_qcd1_alpha_s", "MadGraph_pdf45_qcd5", "MadGraph_pdf45_qcd37_alpha_s", "MadGraph_pdf47_qcd5", "MadGraph_pdf47_qcd5_alpha_s"};
+
+  // LHERunInfoProduct not defined for data
+  // can also be useful for MC in the rare cases where no LHERunInfoProduct is available
+  if(uncertScheme == "None"){
+    std::cout<<"Uncertainty scheme is \"None\". Skipping checks that require LHERunInforProduct"<<std::endl;
+    return;
+  }
+  else if (std::find(std::begin(allowedSchemes), std::end(allowedSchemes), uncertScheme) == std::end(allowedSchemes)){
+    throw cms::Exception("InvalidOption") << "Invalid uncertainty scheme: " << uncertScheme << std::endl;
+  }
+
   // PDF, alpha strong and QCD uncertainty schemes
   _MC_pdf_first_idx = 0;
   _MC_pdf_last_idx = _MC_pdf.size();
-  if (uncertScheme.find("MadGraph") != std::string::npos)
-	{
-	  if (uncertScheme.find("MadGraph45") != std::string::npos) _MC_pdf_first_idx = 47;
-	  else if (uncertScheme.find("MadGraph9") != std::string::npos) _MC_pdf_first_idx = 9;
-	}
-  else if (uncertScheme.find("Powheg") != std::string::npos)
-	{
-	  _MC_pdf_first_idx = 9;
-	}
-  else
-	{
-	  if (uncertScheme != "None") {
-		throw cms::Exception("InvalidOption") << "uncertainty scheme " << uncertScheme << " option is not valid";
-	  }
-	}
+  if (uncertScheme.find("pdf9") != std::string::npos)
+  {
+    _MC_pdf_first_idx = 9;
+  }
+  else if (uncertScheme.find("pdf45") != std::string::npos)
+  {
+    _MC_pdf_first_idx = 45;
+  }
+  else if (uncertScheme.find("pdf47") != std::string::npos)
+  {
+    _MC_pdf_first_idx = 47;
+  }
+  else if (uncertScheme.find("pdf112") != std::string::npos)
+  {
+    _MC_pdf_first_idx = 112;
+  }
+
+
+  // QCD scale
+  if (uncertScheme.find("qcd5") != std::string::npos)
+  {
+    _MC_QCDscale_indices[0] = 0; // muF1p0_muR1p0
+    _MC_QCDscale_indices[1] = 5;
+    _MC_QCDscale_indices[2] = 10;
+    _MC_QCDscale_indices[3] = 15;
+    _MC_QCDscale_indices[4] = 20;
+    _MC_QCDscale_indices[5] = 30;
+    _MC_QCDscale_indices[6] = 40;
+  }
+  else if (uncertScheme.find("qcd1") != std::string::npos)
+  {
+    _MC_QCDscale_indices[0] = 0; // muF1p0_muR1p0
+    _MC_QCDscale_indices[1] = 1;
+    _MC_QCDscale_indices[2] = 2;
+    _MC_QCDscale_indices[3] = 3;
+    _MC_QCDscale_indices[4] = 4;
+    _MC_QCDscale_indices[5] = 6;
+    _MC_QCDscale_indices[6] = 8;
+  }
+  else if (uncertScheme.find("qcd37") != std::string::npos){
+    _MC_QCDscale_indices[0] = 36; // muF1p0_muR1p0
+    _MC_QCDscale_indices[1] = 37;
+    _MC_QCDscale_indices[2] = 38;
+    _MC_QCDscale_indices[3] = 39;
+    _MC_QCDscale_indices[4] = 40;
+    _MC_QCDscale_indices[5] = 42;
+    _MC_QCDscale_indices[6] = 44;
+  }
 
   // handle the factor of 2 error in the MINIAOD ST_s-channel_4f sample
   st_mult = 1.;
-  if (uncertScheme == "MadGraph9B_STlepton") {
-	st_mult = 2.;
+  if (uncertScheme.find("STlepton") != std::string::npos) {
+    st_mult = 2.;
   }
-}
-
-void HTauTauNtuplizer::endRun(edm::Run const& iRun, edm::EventSetup const& iSetup) {
-  // LHERunInfoProduct not defined for data
-  // can also be useful for MC in the rare cases where no LHERunInfoProduct is available
-  if(uncertScheme == "None") return; 
 
   // checks if PDF ID of QCD scale reference matches PDF ID of PDF reference
   
   edm::Handle<LHERunInfoProduct> run;
-  iRun.getByToken(theLHERunInfoTag, run);
+
+  // throws a warning about reading a Run product before endRun was called, but does it anyway ¯\_(ツ)_/¯
+  iRun.getByLabel("externalLHEProducer", run);
+
   typedef std::vector<LHERunInfoProduct::Header>::const_iterator headers_const_iterator;
 
   int pdf_id_qcd_scale_ref = 1;
@@ -4000,48 +4018,53 @@ void HTauTauNtuplizer::endRun(edm::Run const& iRun, edm::EventSetup const& iSetu
   
   std::regex reg;
   if (uncertScheme.find("MadGraph") != std::string::npos) {
-	reg = "<weight.+ PDF=\"(.*)\" .+>.*<\\/weight>";
+    reg = "<weight.+ PDF=\"(.*)\" .+>.*<\\/weight>";
   }
   else if (uncertScheme.find("Powheg") != std::string::npos) {
-	reg = "<weight.+> lhapdf=(.*) .*<\\/weight>";
+    reg = "<weight.+> lhapdf=(.*) .*<\\/weight>";
   }
   
   for (headers_const_iterator iter = run->headers_begin(); iter != run->headers_end(); iter++) {
-	std::vector<std::string> lines = iter->lines();
-	for (unsigned int iLine = 0; iLine < lines.size(); iLine++) {
-	  std::smatch match;
-	  std::regex_search(lines.at(iLine), match, reg);
-	  if(DEBUG) {
-		std::cout << lines.at(iLine) << std::endl;
-	  }
-	  
-	  if (match.size()==2) {
-		if (weight_lines_counter == 0) {
-		  pdf_id_qcd_scale_ref = std::atoi(match[1].str().c_str());
-		}
-		else if (weight_lines_counter == _MC_pdf_first_idx) {
-		  pdf_id_pdf_ref = std::atoi(match[1].str().c_str());
-		}
-		weight_lines_counter += 1;
-		if(DEBUG) {
-		  std::cout << weight_lines_counter << " " << pdf_id_qcd_scale_ref << " " << pdf_id_pdf_ref << std::endl;
-		}
-	  }
-	  // no other checks, should exit
-	  if (weight_lines_counter > _MC_pdf_first_idx) {
-		break;
-	  }
-	}
+    std::vector<std::string> lines = iter->lines();
+    for (unsigned int iLine = 0; iLine < lines.size(); iLine++) {
+      std::smatch match;
+      std::regex_search(lines.at(iLine), match, reg);
+      if(DEBUG) {
+        std::cout << lines.at(iLine) << std::endl;
+      }
+
+      if (match.size()==2) {
+        if (weight_lines_counter == _MC_QCDscale_indices[0]) {
+          pdf_id_qcd_scale_ref = std::atoi(match[1].str().c_str());
+        }
+        else if (weight_lines_counter == _MC_pdf_first_idx) {
+          pdf_id_pdf_ref = std::atoi(match[1].str().c_str());
+        }
+        if(DEBUG) {
+          std::cout << weight_lines_counter << " " << pdf_id_qcd_scale_ref << " " << pdf_id_pdf_ref << std::endl;
+        }
+      }
+      if (lines.at(iLine).find("<weight ") != std::string::npos) {
+        weight_lines_counter++;
+      }
+      // no other checks, should exit
+      if (weight_lines_counter > _MC_pdf_first_idx) {
+      break;
+      }
+    }
   }
 
   if (pdf_id_qcd_scale_ref != pdf_id_pdf_ref) {
-	throw cms::Exception("InvalidOption")
-	  << "PDF ID of QCD scale reference ("
-	  << pdf_id_qcd_scale_ref
-	  << ") weight does not match PDF ID of PDF reference ("
-	  << pdf_id_pdf_ref
-	  << ") weight";
+    throw cms::Exception("InvalidOption")
+      << "PDF ID of QCD scale reference ("
+      << pdf_id_qcd_scale_ref
+      << ") weight does not match PDF ID of PDF reference ("
+      << pdf_id_pdf_ref
+      << ") weight";
   }
+}
+
+void HTauTauNtuplizer::endRun(edm::Run const& iRun, edm::EventSetup const& iSetup) {
 }
 
 void HTauTauNtuplizer::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const& iSetup){
