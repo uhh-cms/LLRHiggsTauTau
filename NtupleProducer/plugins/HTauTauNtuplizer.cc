@@ -796,7 +796,7 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   double st_mult;
   unsigned _MC_pdf_first_idx;
   unsigned _MC_pdf_last_idx;
-  unsigned _MC_QCDscale_indices[7] = {};
+  std::vector<unsigned> _MC_QCDscale_indices = std::vector<unsigned>(7, 0);
 };
 
 const int HTauTauNtuplizer::ntauIds; // definition of static member
@@ -2138,12 +2138,9 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
         }
       }
       _MC_QCDscale[0] = lheweights[_MC_QCDscale_indices[0]].wgt; // muF1p0_muR1p0
-      _MC_QCDscale[1] = st_mult * lheweights[_MC_QCDscale_indices[1]].wgt;
-      _MC_QCDscale[2] = st_mult * lheweights[_MC_QCDscale_indices[2]].wgt;
-      _MC_QCDscale[3] = st_mult * lheweights[_MC_QCDscale_indices[3]].wgt;
-      _MC_QCDscale[4] = st_mult * lheweights[_MC_QCDscale_indices[4]].wgt;
-      _MC_QCDscale[5] = st_mult * lheweights[_MC_QCDscale_indices[5]].wgt;
-      _MC_QCDscale[6] = st_mult * lheweights[_MC_QCDscale_indices[6]].wgt;
+      for(unsigned i=1; i<7; ++i) {
+	_MC_QCDscale[i] = st_mult * lheweights[_MC_QCDscale_indices[i]].wgt;
+      }
       if (uncertScheme.find("alpha_s") != std::string::npos) {
         _MC_astrong[0] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+1].wgt;
         _MC_astrong[1] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+2].wgt;
