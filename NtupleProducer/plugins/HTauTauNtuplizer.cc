@@ -3832,7 +3832,7 @@ void HTauTauNtuplizer::endJob(){
     for(int i=1;i<=ntauIds;i++){
     hTauIDs->GetXaxis()->SetBinLabel(i,tauIDStrings[i-1].Data());
   }
-  std::cout<<"Skipped events due to empty lhe weights: "<<empty_lheweights<<std::endl;
+  if(empty_lheweights > 0) std::cout<<"Skipped events due to empty lhe weights: "<<empty_lheweights<<std::endl;
 }
 
 
