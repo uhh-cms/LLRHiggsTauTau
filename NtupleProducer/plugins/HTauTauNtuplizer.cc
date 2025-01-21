@@ -2160,17 +2160,20 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
         empty_lheweights++;
         return;
       }
-      for (unsigned pdf_idx = _MC_pdf_first_idx; pdf_idx <= _MC_pdf_first_idx+_MC_pdf_last_idx; ++pdf_idx) {
-        if (pdf_idx != _MC_pdf_first_idx) {
-          _MC_pdf[pdf_idx-_MC_pdf_first_idx] = st_mult * lheweights[pdf_idx].wgt;
-        }
-        else {
-          _MC_pdf[pdf_idx-_MC_pdf_first_idx] = lheweights[pdf_idx].wgt;
+      if(uncertScheme.find("pdfSkipped") == std::string::npos) // skip PDF variation weights for specific samples
+      {
+        for (unsigned pdf_idx = _MC_pdf_first_idx; pdf_idx <= _MC_pdf_first_idx+_MC_pdf_last_idx; ++pdf_idx) {
+          if (pdf_idx != _MC_pdf_first_idx) {
+            _MC_pdf[pdf_idx-_MC_pdf_first_idx] = st_mult * lheweights[pdf_idx].wgt;
+          }
+          else {
+            _MC_pdf[pdf_idx-_MC_pdf_first_idx] = lheweights[pdf_idx].wgt;
+          }
         }
       }
       _MC_QCDscale[0] = lheweights[_MC_QCDscale_indices[0]].wgt; // muF1p0_muR1p0
       for(unsigned i=1; i<7; ++i) {
-	_MC_QCDscale[i] = st_mult * lheweights[_MC_QCDscale_indices[i]].wgt;
+        _MC_QCDscale[i] = st_mult * lheweights[_MC_QCDscale_indices[i]].wgt;
       }
       if (uncertScheme.find("alpha_s") != std::string::npos) {
         _MC_astrong[0] = lheweights[_MC_pdf_first_idx+_MC_pdf_last_idx+1].wgt;
@@ -4047,7 +4050,7 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
     } 
   }
 
-  std::vector<std::string> allowedSchemes{"Powheg_pdf9_qcd1_alpha_s", "Powheg_pdf112_qcd1_alpha_s", "MadGraph_pdf9_qcd1", "MadGraph_pdf9_qcd1_alpha_s", "MadGraph_pdf45_qcd5", "MadGraph_pdf45_qcd37_alpha_s", "MadGraph_pdf47_qcd5", "MadGraph_pdf47_qcd5_alpha_s"};
+  std::vector<std::string> allowedSchemes{"Powheg_pdfSkipped_qcd1", "Powheg_pdf9_qcd1_alpha_s", "Powheg_pdf112_qcd1_alpha_s", "MadGraph_pdf9_qcd1", "MadGraph_pdf9_qcd1_alpha_s", "MadGraph_pdf45_qcd5", "MadGraph_pdf45_qcd37_alpha_s", "MadGraph_pdf47_qcd5", "MadGraph_pdf47_qcd5_alpha_s"};
 
   // LHERunInfoProduct not defined for data
   // can also be useful for MC in the rare cases where no LHERunInfoProduct is available
@@ -4062,23 +4065,22 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
   // PDF, alpha strong and QCD uncertainty schemes
   _MC_pdf_first_idx = 0;
   _MC_pdf_last_idx = _MC_pdf.size();
-  if (uncertScheme.find("pdf9") != std::string::npos)
+  if(uncertScheme.find("pdf9") != std::string::npos)
   {
     _MC_pdf_first_idx = 9;
   }
-  else if (uncertScheme.find("pdf45") != std::string::npos)
+  else if(uncertScheme.find("pdf45") != std::string::npos)
   {
     _MC_pdf_first_idx = 45;
   }
-  else if (uncertScheme.find("pdf47") != std::string::npos)
+  else if(uncertScheme.find("pdf47") != std::string::npos)
   {
     _MC_pdf_first_idx = 47;
   }
-  else if (uncertScheme.find("pdf112") != std::string::npos)
+  else if(uncertScheme.find("pdf112") != std::string::npos)
   {
     _MC_pdf_first_idx = 112;
   }
-
 
   // QCD scale
   if (uncertScheme.find("qcd5") != std::string::npos)
@@ -4115,6 +4117,12 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
   st_mult = 1.;
   if (uncertScheme.find("STlepton") != std::string::npos) {
     st_mult = 2.;
+  }
+
+  // skip PDF variation weights for specific samples
+  if(uncertScheme.find("pdfSkipped") != std::string::npos)
+  {
+    return;
   }
 
   // checks if PDF ID of QCD scale reference matches PDF ID of PDF reference

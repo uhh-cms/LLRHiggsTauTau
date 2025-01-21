@@ -24,7 +24,7 @@ try: SCHEME
 except:
     SCHEME = "None"
 print 'Uncertainty scheme:', SCHEME
-assert SCHEME in ("None", "Powheg_pdf9_qcd1_alpha_s", "Powheg_pdf112_qcd1_alpha_s", "MadGraph_pdf9_qcd1", "MadGraph_pdf9_qcd1_alpha_s", "MadGraph_pdf45_qcd5", "MadGraph_pdf45_qcd37_alpha_s", "MadGraph_pdf47_qcd5", "MadGraph_pdf47_qcd5_alpha_s")
+assert SCHEME in ("None", "Powheg_pdfSkipped_qcd1", "Powheg_pdf9_qcd1_alpha_s", "Powheg_pdf112_qcd1_alpha_s", "MadGraph_pdf9_qcd1", "MadGraph_pdf9_qcd1_alpha_s", "MadGraph_pdf45_qcd5", "MadGraph_pdf45_qcd37_alpha_s", "MadGraph_pdf47_qcd5", "MadGraph_pdf47_qcd5_alpha_s")
 try: doCPVariables
 except NameError:
     doCPVariables=True       
